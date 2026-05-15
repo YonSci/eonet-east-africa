@@ -1,24 +1,17 @@
 import { useQuery } from '@tanstack/react-query'
 import useAppStore from '../store/useAppStore.js'
 
-// ---------------------------------------------------------------------------
-// Config
-// ---------------------------------------------------------------------------
-const EONET_BASE  = 'https://eonet.gsfc.nasa.gov/api/v3'
-const EA_BBOX     = '21.8,22.0,51.4,-11.7'   // min_lon,max_lat,max_lon,min_lat
-const USE_DIRECT  = import.meta.env.VITE_EONET_DIRECT === 'true'
-const API_BASE    = import.meta.env.VITE_API_BASE_URL || ''
+const EONET_BASE = 'https://eonet.gsfc.nasa.gov/api/v3'
+const EA_BBOX    = '21.8,22.0,51.4,-11.7'
+const USE_DIRECT = import.meta.env.VITE_EONET_DIRECT === 'true'
+const API_BASE   = import.meta.env.VITE_API_BASE_URL || ''
 
-// ---------------------------------------------------------------------------
-// Convert EONET GeoJSON feature -> our flat event object
-// ---------------------------------------------------------------------------
 function convertFeature(feat) {
   const props = feat.properties || {}
   const geom  = feat.geometry   || {}
   const cats  = props.categories || []
   const srcs  = props.sources    || []
-
-  let coords = null
+  let coords  = null
   if (geom.type === 'Point') {
     coords = geom.coordinates
   } else if (geom.type === 'Polygon' && geom.coordinates?.[0]?.length) {
@@ -30,7 +23,6 @@ function convertFeature(feat) {
       (Math.min(...lats) + Math.max(...lats)) / 2,
     ]
   }
-
   return {
     id:          props.id          || '',
     title:       props.title       || '',
@@ -40,7 +32,7 @@ function convertFeature(feat) {
     categories:  cats,
     status:      props.closed ? 'closed' : 'open',
     closed:      props.closed || null,
-    latest_date: props.date   || (props.geometryDates || [])[0] || '',
+    latest_date: props.date || (props.geometryDates || [])[0] || '',
     coords,
     sources: srcs,
     magnitude: props.magnitudeValue != null
@@ -49,90 +41,79 @@ function convertFeature(feat) {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Fetch strategies
-// ---------------------------------------------------------------------------
-
-// Direct from NASA EONET -- used on Netlify / static deployments
-async function fetchDirect(days, status) {
-  const params = new URLSearchParams({ bbox: EA_BBOX, days, status, limit: 500 })
-  const url    = EONET_BASE + '/events/geojson?' + params
-  const res    = await fetch(url)
+async function fetchDirect(opts) {
+  const params = new URLSearchParams({ bbox: EA_BBOX, limit: 500, status: opts.status || 'all' })
+  if (opts.startDate && opts.endDate) {
+    params.set('start', opts.startDate)
+    params.set('end',   opts.endDate)
+  } else {
+    params.set('days', String(opts.days || 90))
+  }
+  const res  = await fetch(EONET_BASE + '/events/geojson?' + params)
   if (!res.ok) throw new Error('EONET ' + res.status)
-  const data   = await res.json()
+  const data = await res.json()
   return (data.features || []).map(convertFeature)
 }
 
-// Via FastAPI backend -- used in local dev
-async function fetchViaBackend(days, status) {
-  const params = new URLSearchParams({ days, status })
-  const res    = await fetch(API_BASE + '/events?' + params)
+async function fetchViaBackend(opts) {
+  const params = new URLSearchParams({ status: opts.status || 'all' })
+  if (opts.startDate && opts.endDate) {
+    params.set('start', opts.startDate)
+    params.set('end',   opts.endDate)
+  } else {
+    params.set('days', String(opts.days || 90))
+  }
+  const res  = await fetch(API_BASE + '/events?' + params)
   if (!res.ok) throw new Error('Backend ' + res.status)
-  const data   = await res.json()
+  const data = await res.json()
   return data.events || []
 }
 
-// Unified: tries backend first (local dev), falls back to direct EONET
-async function fetchEvents(days, status) {
-  if (USE_DIRECT) return fetchDirect(days, status)
+async function fetchEvents(opts) {
+  if (USE_DIRECT) return fetchDirect(opts)
   try {
-    return await fetchViaBackend(days, status)
+    return await fetchViaBackend(opts)
   } catch {
     console.info('[NET-EA] Backend offline -- fetching EONET directly')
-    return fetchDirect(days, status)
+    return fetchDirect(opts)
   }
 }
 
-// ---------------------------------------------------------------------------
-// Hooks
-// ---------------------------------------------------------------------------
-
 export function useEvents() {
-  const { activeStatus, lookbackDays } = useAppStore()
-
+  const { activeStatus, lookbackDays, dateMode, startDate, endDate } = useAppStore()
+  const opts = { status: activeStatus, days: lookbackDays }
+  if (dateMode === 'range' && startDate && endDate) {
+    opts.startDate = startDate
+    opts.endDate   = endDate
+  }
   return useQuery({
-    // queryKey includes lookbackDays -- TanStack refetches when days slider changes
-    queryKey:        ['events', activeStatus, lookbackDays],
-    queryFn:         () => fetchEvents(lookbackDays, activeStatus),
-    staleTime:       10 * 60 * 1000,   // treat data fresh for 10 min
-    refetchInterval: 15 * 60 * 1000,   // poll every 15 min for live updates
+    queryKey:        ['events', activeStatus, lookbackDays, dateMode, startDate, endDate],
+    queryFn:         () => fetchEvents(opts),
+    staleTime:       10 * 60 * 1000,
+    refetchInterval: 15 * 60 * 1000,
     retry:           2,
   })
 }
 
-// Summary is derived client-side from the events -- no extra network call
 export function useSummary() {
   const { data: events = [], isLoading } = useEvents()
-
-  const open   = events.filter((e) => e.status === 'open').length
-  const closed = events.filter((e) => e.status === 'closed').length
+  const open        = events.filter((e) => e.status === 'open').length
+  const closed      = events.filter((e) => e.status === 'closed').length
   const by_category = {}
-  events.forEach((e) => {
-    by_category[e.category] = (by_category[e.category] || 0) + 1
-  })
-
-  return {
-    data: { total: events.length, open, closed, by_category },
-    isLoading,
-  }
+  events.forEach((e) => { by_category[e.category] = (by_category[e.category] || 0) + 1 })
+  return { data: { total: events.length, open, closed, by_category }, isLoading }
 }
 
-// Cache status: shows API mode and last update time
 export function useCacheStatus() {
   return useQuery({
     queryKey:        ['cache_status'],
-    queryFn:         async () => {
-      if (USE_DIRECT) {
-        return { mode: 'direct', note: 'Fetching from NASA EONET directly' }
-      }
+    queryFn: async () => {
+      if (USE_DIRECT) return { mode: 'direct', note: 'NASA EONET direct fetch' }
       try {
         const res = await fetch(API_BASE + '/status')
         if (!res.ok) return { mode: 'direct', note: 'Backend offline' }
-        const d = await res.json()
-        return { ...d, mode: 'backend' }
-      } catch {
-        return { mode: 'direct', note: 'Backend offline -- using direct EONET' }
-      }
+        return { ...(await res.json()), mode: 'backend' }
+      } catch { return { mode: 'direct', note: 'Backend offline' } }
     },
     refetchInterval: 60 * 1000,
     staleTime:       30 * 1000,

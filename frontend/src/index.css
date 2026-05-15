@@ -1,44 +1,5 @@
-/* ---- EONET East Africa Dashboard -- CSS Variables ---- */
 
 :root {
-  --bg-base:        #0d1117;
-  --bg-surface:     #161b22;
-  --bg-elevated:    #21262d;
-  --bg-hover:       #2d333b;
-
-  --text-primary:   #e6edf3;
-  --text-secondary: #8b949e;
-  --text-muted:     #6e7681;
-  --text-faint:     #484f58;
-
-  --border-primary: #30363d;
-  --border-muted:   #21262d;
-
-  --accent-blue:    #378ADD;
-  --accent-green:   #1D9E75;
-
-  /* Category colours */
-  --cat-wildfires:    #E8593C;
-  --cat-storms:       #378ADD;
-  --cat-floods:       #1D9E75;
-  --cat-drought:      #BA7517;
-  --cat-volcanoes:    #E24B4A;
-  --cat-dust:         #888780;
-  --cat-earthquakes:  #7F77DD;
-  --cat-landslides:   #639922;
-  --cat-unknown:      #484f58;
-
-  --status-open:   #1D9E75;
-  --status-closed: #6e7681;
-
-  --sidebar-w:     260px;
-  --topnav-h:      52px;
-  --radius-sm:     4px;
-  --radius-md:     8px;
-  --radius-lg:     12px;
-}
-
-html.light {
   --bg-base:        #f6f8fa;
   --bg-surface:     #ffffff;
   --bg-elevated:    #f0f3f6;
@@ -49,6 +10,36 @@ html.light {
   --text-faint:     #a0aec0;
   --border-primary: #d1d9e0;
   --border-muted:   #eaecef;
+  --accent-blue:    #378ADD;
+  --accent-green:   #1D9E75;
+  --cat-wildfires:    #E8593C;
+  --cat-storms:       #378ADD;
+  --cat-floods:       #1D9E75;
+  --cat-drought:      #BA7517;
+  --cat-volcanoes:    #E24B4A;
+  --cat-dust:         #888780;
+  --cat-earthquakes:  #7F77DD;
+  --cat-landslides:   #639922;
+  --status-open:   #1D9E75;
+  --status-closed: #6e7681;
+  --sidebar-w:     260px;
+  --topnav-h:      52px;
+  --radius-sm:     4px;
+  --radius-md:     8px;
+  --radius-lg:     12px;
+}
+
+html:not(.light) {
+  --bg-base:        #0d1117;
+  --bg-surface:     #161b22;
+  --bg-elevated:    #21262d;
+  --bg-hover:       #2d333b;
+  --text-primary:   #e6edf3;
+  --text-secondary: #8b949e;
+  --text-muted:     #6e7681;
+  --text-faint:     #484f58;
+  --border-primary: #30363d;
+  --border-muted:   #21262d;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -65,19 +56,19 @@ body {
 
 #root { height: 100vh; display: flex; flex-direction: column; }
 
-/* Scrollbar */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: var(--bg-surface); }
 ::-webkit-scrollbar-thumb { background: var(--border-primary); border-radius: 3px; }
 
-/* Leaflet overrides */
-.leaflet-container { background: #1a2332 !important; }
+/* -- Leaflet overrides --------------------------------------------------- */
+.leaflet-container { background: #e8f0e0 !important; }
+html:not(.light) .leaflet-container { background: #1a2332 !important; }
 .leaflet-popup-content-wrapper {
   background: var(--bg-elevated) !important;
   color: var(--text-primary) !important;
   border: 1px solid var(--border-primary) !important;
   border-radius: var(--radius-md) !important;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.4) !important;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15) !important;
 }
 .leaflet-popup-tip { background: var(--bg-elevated) !important; }
 .leaflet-popup-close-button { color: var(--text-secondary) !important; }
@@ -87,21 +78,94 @@ body {
   border-color: var(--border-primary) !important;
 }
 .leaflet-control-attribution {
-  background: rgba(13,17,23,0.7) !important;
+  background: rgba(255,255,255,0.75) !important;
   color: var(--text-muted) !important;
+}
+html:not(.light) .leaflet-control-attribution {
+  background: rgba(13,17,23,0.7) !important;
 }
 .leaflet-control-attribution a { color: var(--accent-blue) !important; }
 
-/* Animated pulse for open events */
-@keyframes pulse-ring {
-  0%   { transform: scale(0.8); opacity: 0.8; }
-  100% { transform: scale(2.0); opacity: 0; }
+/* -- Marker cluster overrides -------------------------------------------- */
+.marker-cluster-small, .marker-cluster-medium, .marker-cluster-large {
+  background: rgba(29, 158, 117, 0.18) !important;
 }
-.marker-pulse::after {
-  content: '';
-  position: absolute;
-  inset: -4px;
-  border-radius: 50%;
-  border: 2px solid currentColor;
-  animation: pulse-ring 2s ease-out infinite;
+.marker-cluster-small div, .marker-cluster-medium div, .marker-cluster-large div {
+  background: rgba(29, 158, 117, 0.55) !important;
+  color: #fff !important;
+  font-weight: 600 !important;
+  font-size: 12px !important;
 }
+
+/* -- Skeleton animation -------------------------------------------------- */
+@keyframes skel-pulse {
+  0%   { opacity: 1; }
+  50%  { opacity: 0.4; }
+  100% { opacity: 1; }
+}
+.skeleton {
+  background: var(--border-muted);
+  border-radius: var(--radius-sm);
+  animation: skel-pulse 1.4s ease-in-out infinite;
+}
+
+/* -- Toast container ----------------------------------------------------- */
+.toast-container {
+  position: fixed;
+  top: 62px;
+  right: 14px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+.toast {
+  pointer-events: auto;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-primary);
+  border-left: 3px solid #1D9E75;
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  min-width: 260px;
+  max-width: 340px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  animation: toast-in 0.25s ease;
+}
+@keyframes toast-in {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.toast-warn { border-left-color: #BA7517; }
+.toast-error { border-left-color: #E24B4A; }
+
+/* -- Print styles -------------------------------------------------------- */
+@media print {
+  body { overflow: visible !important; height: auto !important; background: #fff !important; }
+  #root { height: auto !important; overflow: visible !important; }
+  .no-print { display: none !important; }
+  .print-only { display: block !important; }
+  .leaflet-container { height: 320px !important; }
+  .leaflet-control-zoom, .leaflet-control-attribution { display: none !important; }
+
+  header, aside, .tab-bar-row { display: none !important; }
+
+  .print-header {
+    display: flex !important;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0 16px;
+    border-bottom: 2px solid #1D9E75;
+    margin-bottom: 16px;
+  }
+  .print-title { font-size: 18px; font-weight: 700; color: #1a1e23; }
+  .print-subtitle { font-size: 12px; color: #718096; margin-top: 2px; }
+  .print-meta { font-size: 11px; color: #718096; margin-left: auto; text-align: right; }
+
+  main { display: block !important; }
+  .stat-cards-row { display: flex !important; gap: 10px; margin-bottom: 14px; }
+  .map-event-row { display: block !important; }
+  .event-right-panel { width: 100% !important; height: auto !important; border: none !important; }
+}
+
+.print-only { display: none; }
