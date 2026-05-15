@@ -6,6 +6,7 @@ import {
 } from 'recharts'
 import useAppStore, { CATEGORIES } from '../store/useAppStore.js'
 import { useEvents, useSummary } from '../api/queries.js'
+import YearComparison from './YearComparison.jsx'
 
 // -- Country bbox (same as MapPanel) ------------------------------------------
 const COUNTRY_BBOX = {
@@ -460,6 +461,12 @@ export default function AnalyticsPanel() {
     </div>
   )
 }
+
+
+      {/* Year-over-year comparison */}
+      <Card title="Year-over-year event comparison" style={{ gridColumn: '1 / -1' }}>
+        <YearComparison />
+      </Card>
 
 function Card({ title, children, style }) {
   return (

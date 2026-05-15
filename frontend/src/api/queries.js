@@ -119,3 +119,35 @@ export function useCacheStatus() {
     staleTime:       30 * 1000,
   })
 }
+
+// ---------------------------------------------------------------------------
+// Year-over-year helpers
+// ---------------------------------------------------------------------------
+
+const EONET_BASE_YOY = 'https://eonet.gsfc.nasa.gov/api/v3'
+const EA_BBOX_YOY    = '21.8,22.0,51.4,-11.7'
+
+async function fetchYearDirect(year) {
+  const curYear = new Date().getFullYear()
+  const start   = year + '-01-01'
+  const end     = (year === curYear)
+    ? new Date().toISOString().slice(0, 10)
+    : year + '-12-31'
+  const params  = new URLSearchParams({
+    bbox: EA_BBOX_YOY, status: 'all', limit: 500, start, end,
+  })
+  const res  = await fetch(EONET_BASE_YOY + '/events/geojson?' + params)
+  if (!res.ok) throw new Error('EONET ' + res.status)
+  const data = await res.json()
+  return (data.features || []).map(convertFeature)
+}
+
+export function useYearData(year) {
+  return useQuery({
+    queryKey:  ['year-events', year],
+    queryFn:   () => fetchYearDirect(year),
+    staleTime: 60 * 60 * 1000,
+    enabled:   year > 2015 && year <= new Date().getFullYear(),
+    retry:     2,
+  })
+}

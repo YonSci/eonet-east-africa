@@ -1,4 +1,42 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react'
+"""
+setup_sat_fix.py
+----------------
+Fixes the satellite button / dropdown being hidden behind the Leaflet map.
+
+Root cause: Leaflet creates its own stacking context that overrides
+z-index on siblings. The dropdown needs position:fixed so it escapes
+the Leaflet stacking context entirely.
+
+Changes:
+  - Satellite button gets a useRef to measure its screen position
+  - Dropdown renders with position:fixed + computed top/right coords
+  - Button z-index raised to 1001 to stay above all Leaflet layers
+  - Close-on-outside-click behaviour added via useEffect
+
+Run from the eonet-east-africa project root:
+    python setup_sat_fix.py
+"""
+
+import sys, argparse
+from pathlib import Path
+
+try:
+    from colorama import Fore, Style, init as _ci
+    _ci(autoreset=True)
+    def ok(m):  print(f"{Fore.GREEN}  [+]{Style.RESET_ALL} {m}")
+    def ow(m):  print(f"{Fore.YELLOW}  [~]{Style.RESET_ALL} {m}")
+    def hdr(m): print(f"\n{Fore.CYAN}{Style.BRIGHT}{m}{Style.RESET_ALL}")
+except ImportError:
+    def ok(m):  print(f"  [+] {m}")
+    def ow(m):  print(f"  [~] {m}")
+    def hdr(m): print(f"\n{m}")
+
+FILES = {}
+
+# =============================================================================
+# MapPanel.jsx -- fixed-position satellite dropdown
+# =============================================================================
+FILES["frontend/src/components/MapPanel.jsx"] = r"""import React, { useEffect, useState, useCallback, useRef } from 'react'
 import {
   MapContainer, TileLayer, WMSTileLayer, CircleMarker,
   Popup, GeoJSON, Rectangle, useMap,
@@ -492,3 +530,42 @@ export default function MapPanel({ height }) {
     </div>
   )
 }
+"""
+
+# =============================================================================
+# Builder
+# =============================================================================
+def build(root: Path):
+    hdr(f"Applying satellite z-index fix in: {root}")
+    fe = root / "frontend"
+
+    target = fe / "src/components/MapPanel.jsx"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(FILES["frontend/src/components/MapPanel.jsx"], encoding="utf-8")
+    ow("update  frontend/src/components/MapPanel.jsx")
+
+    hdr("Done")
+    print()
+    print("  Fix summary:")
+    print("    SatelliteControl is now a separate component")
+    print("    Dropdown uses position:fixed with coords from getBoundingClientRect()")
+    print("    z-index: 99999 -- escapes Leaflet stacking context completely")
+    print("    Close-on-outside-click via mousedown event listener")
+    print("    All map overlays (badge, legend, event count) raised to z-index: 1001")
+    print()
+    print("  No npm install needed -- just restart Vite:")
+    print("    cd frontend && npm run dev")
+    print()
+
+
+if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser(description="Fix satellite panel z-index issue")
+    parser.add_argument("--path", default=".", help="Project root (default: current dir)")
+    args   = parser.parse_args()
+    root   = Path(args.path).resolve()
+    if not (root / "backend").exists():
+        print(f"WARNING: {root} may not be project root. Continue? [y/N] ", end="")
+        if input().strip().lower() != "y":
+            sys.exit(0)
+    build(root)
