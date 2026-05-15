@@ -23,8 +23,8 @@ export default defineConfig({
         theme_color: '#1D9E75',
         background_color: '#f6f8fa',
         display: 'standalone',
-        start_url: '/',
-        scope: '/',
+        start_url: process.env.VITE_BASE_PATH || '/',
+        scope: process.env.VITE_BASE_PATH || '/',
         icons: [
           { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
           { src: '/icon-512.png', sizes: '512x512', type: 'image/png',
@@ -67,7 +67,7 @@ export default defineConfig({
       },
     }),
   ],
-  base: '/',
+  base: process.env.VITE_BASE_PATH || '/',
   server: {
     port: 5173,
     proxy: {
