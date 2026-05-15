@@ -1,5 +1,6 @@
 import React from 'react'
 import { CATEGORIES } from '../store/useAppStore.js'
+import AlertSubscription from './AlertSubscription.jsx'
 
 // ---- Small layout helpers ----
 
@@ -302,6 +303,17 @@ export default function AboutPanel() {
         <InfoRow label="Satellite data" value="NASA MODIS, VIIRS, Ocean Color instruments" />
         <InfoRow label="Hazard sources" value="USGS, GDACS, Smithsonian GVP, JTWC, FEWS NET, ReliefWeb" />
         <InfoRow label="Open source"    value="MIT License -- source code on GitHub" />
+      </Section>
+
+      {/* Email alert subscriptions */}
+      <Section title="Email alert subscriptions">
+        <Para>
+          Subscribe to receive email notifications when new events matching your
+          selected categories and countries are detected during the 15-minute
+          automatic refresh. Requires the FastAPI backend to be running with
+          SMTP configured.
+        </Para>
+        <AlertSubscription />
       </Section>
 
       {/* Disclaimer */}

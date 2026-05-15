@@ -15,7 +15,15 @@ export const CATEGORIES = {
 
 export const ALL_CATS = Object.keys(CATEGORIES)
 
-// -- URL read / write helpers --
+export const MAG_CATS = ['earthquakes', 'severeStorms', 'floods', 'temperatureExtremes']
+
+export const COUNTRY_MAP = {
+  DJ: 'Djibouti',    ER: 'Eritrea',      ET: 'Ethiopia',
+  KE: 'Kenya',       RW: 'Rwanda',       SO: 'Somalia',
+  SS: 'South Sudan', SD: 'Sudan',        TZ: 'Tanzania',
+  UG: 'Uganda',      BI: 'Burundi',
+}
+
 export function readURLFilters() {
   const p = new URLSearchParams(window.location.search)
   return {
@@ -50,10 +58,12 @@ const useAppStore = create((set) => ({
   activeCategories: ALL_CATS,
   activeStatus:     'all',
   lookbackDays:     90,
-  dateMode:         'lookback',   // 'lookback' | 'range'
+  dateMode:         'lookback',
   startDate:        '',
   endDate:          '',
   selectedEventId:  null,
+  selectedCountry:  null,   // ISO2 code e.g. 'KE', 'ET', or null
+  magFilter:        0,      // minimum magnitude value (0 = show all)
   lightMode:        true,
   sidebarOpen:      true,
   toasts:           [],
@@ -70,6 +80,11 @@ const useAppStore = create((set) => ({
   setStartDate:     (v)    => set({ startDate: v }),
   setEndDate:       (v)    => set({ endDate: v }),
   selectEvent:      (id)   => set({ selectedEventId: id }),
+  setSelectedCountry: (iso2) => set((s) => ({
+    selectedCountry: s.selectedCountry === iso2 ? null : iso2,
+  })),
+  clearCountry:     ()     => set({ selectedCountry: null }),
+  setMagFilter:     (v)    => set({ magFilter: v }),
   toggleLight: () => set((s) => {
     const next = !s.lightMode
     document.documentElement.classList.toggle('light', next)
@@ -78,14 +93,10 @@ const useAppStore = create((set) => ({
   toggleSidebar: () => set((s) => ({ sidebarOpen: !s.sidebarOpen })),
 
   addToast: (msg, type) => set((s) => ({
-    toasts: [
-      ...s.toasts,
-      { id: String(++toastSeq), msg, type: type || 'info', ts: Date.now() },
-    ],
+    toasts: [...s.toasts,
+      { id: String(++toastSeq), msg, type: type || 'info', ts: Date.now() }],
   })),
-  removeToast: (id) => set((s) => ({
-    toasts: s.toasts.filter((t) => t.id !== id),
-  })),
+  removeToast: (id) => set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })),
 }))
 
 if (typeof document !== 'undefined') {

@@ -1,12 +1,13 @@
 import React from 'react'
 import { useSummary } from '../api/queries.js'
+import { isNetworkBlockedError } from '../api/queries.js'
 import { CATEGORIES } from '../store/useAppStore.js'
 import { SkeletonRect } from './SkeletonLoader.jsx'
 
 function getCatColor(cat) { return (CATEGORIES[cat] || {}).color || '#484f58' }
 
 export default function StatCards() {
-  const { data: s, isLoading } = useSummary()
+  const { data: s, isLoading, isError, error } = useSummary()
 
   const total    = s?.total  ?? 0
   const open     = s?.open   ?? 0
@@ -29,7 +30,16 @@ export default function StatCards() {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
                   gap: 10, padding: '10px 14px 0', flexShrink: 0 }}>
-      {isLoading ? (
+      {isError ? (
+        <div style={{ gridColumn:'1 / -1', padding:'10px 14px',
+                      fontSize:12, color:'#BA7517', fontWeight:500,
+                      background:'#FAEEDA', borderRadius:'var(--radius-md)',
+                      border:'1px solid #BA751733' }}>
+          {isNetworkBlockedError(error)
+            ? 'Network blocked -- cannot reach NASA EONET. Try a mobile hotspot.'
+            : 'Failed to load events. Check console for details.'}
+        </div>
+      ) : isLoading ? (
         Array.from({ length: 4 }).map((_, i) => (
           <div key={i} style={{ background: 'var(--bg-surface)',
                                 border: '1px solid var(--border-primary)',

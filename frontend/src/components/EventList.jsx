@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import useAppStore, { CATEGORIES } from '../store/useAppStore.js'
 import { useEvents } from '../api/queries.js'
+import NetworkError from './NetworkError.jsx'
 
 // Columns shown in the narrow right panel
 // Title gets all remaining space; magnitude shown only when present
@@ -21,7 +22,7 @@ export default function EventList() {
     selectedEventId,  selectEvent,
   } = useAppStore()
 
-  const { data: rawEvents = [], isLoading } = useEvents()
+  const { data: rawEvents = [], isLoading, isError, error } = useEvents()
 
   const [sortKey, setSortKey] = useState('latest_date')
   const [sortAsc, setSortAsc] = useState(false)
@@ -191,11 +192,19 @@ export default function EventList() {
           {/* Rows */}
           <div style={{ overflowY: 'auto', flex: 1 }}>
             {isLoading && (
-              <div style={{ padding: 20, textAlign: 'center',
+              <div style={{ padding: '16px 10px', textAlign: 'center',
                             color: 'var(--text-muted)', fontSize: 12 }}>
-                Loading...
+                <div style={{ display:'flex', alignItems:'center',
+                              justifyContent:'center', gap:8 }}>
+                  <div style={{ width:14, height:14,
+                                border:'2px solid #1D9E75',
+                                borderTopColor:'transparent', borderRadius:'50%',
+                                animation:'spin 0.9s linear infinite', flexShrink:0 }} />
+                  Fetching from NASA EONET...
+                </div>
               </div>
             )}
+            {isError && <NetworkError error={error} compact />}
             {!isLoading && sorted.length === 0 && (
               <div style={{ padding: 20, textAlign: 'center',
                             color: 'var(--text-muted)', fontSize: 12 }}>

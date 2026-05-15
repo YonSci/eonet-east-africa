@@ -1,4 +1,40 @@
-import React, { useMemo } from 'react'
+"""
+setup_analytics_fix.py
+-----------------------
+Fixes the blank dashboard caused by JSX inserted outside the
+AnalyticsPanel component function scope.
+
+Root cause: multiple patching scripts (setup_yoy.py, setup_tier2.py)
+inserted JSX AFTER the closing } of AnalyticsPanel by searching for
+'function Card' which appears AFTER the return statement. This put
+<SeasonalHeatmap events={events}/> and <YearComparison/> in module
+scope where `events` is not defined, crashing the whole app.
+
+Fix: rewrite AnalyticsPanel.jsx as a single complete file with all
+cards properly inside the return statement.
+
+Run from the eonet-east-africa project root:
+    python setup_analytics_fix.py
+"""
+
+import sys, argparse
+from pathlib import Path
+
+try:
+    from colorama import Fore, Style, init as _ci
+    _ci(autoreset=True)
+    def ok(m):  print(f"{Fore.GREEN}  [+]{Style.RESET_ALL} {m}")
+    def ow(m):  print(f"{Fore.YELLOW}  [~]{Style.RESET_ALL} {m}")
+    def hdr(m): print(f"\n{Fore.CYAN}{Style.BRIGHT}{m}{Style.RESET_ALL}")
+except ImportError:
+    def ok(m):  print(f"  [+] {m}")
+    def ow(m):  print(f"  [~] {m}")
+    def hdr(m): print(f"\n{m}")
+
+# =============================================================================
+# Complete AnalyticsPanel.jsx -- all cards inside return, all imports at top
+# =============================================================================
+ANALYTICS_PANEL = r"""import React, { useMemo } from 'react'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   AreaChart, Area, CartesianGrid, Cell,
@@ -557,3 +593,74 @@ export default function AnalyticsPanel() {
     </div>
   )
 }
+"""
+
+# =============================================================================
+# Builder
+# =============================================================================
+def build(root: Path):
+    fe = root / "frontend"
+    hdr(f"Fixing AnalyticsPanel.jsx in: {root}")
+
+    target = fe / "src/components/AnalyticsPanel.jsx"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(ANALYTICS_PANEL, encoding="utf-8")
+    ow("rewrite  frontend/src/components/AnalyticsPanel.jsx")
+
+    # ASCII check
+    raw = target.read_bytes()
+    bad = [(i+1) for i, line in enumerate(raw.split(b'\n')) if any(b > 127 for b in line)]
+    if bad:
+        print(f"  WARN  Non-ASCII on lines: {bad[:5]}")
+    else:
+        ok("ASCII-clean -- OXC safe")
+
+    # Confirm key strings are inside the component function
+    txt = target.read_text()
+    checks = [
+        ("SeasonalHeatmap events={events}", "SeasonalHeatmap receives events prop"),
+        ("YearComparison />",               "YearComparison inside return"),
+        ("export default function AnalyticsPanel", "main function present"),
+        ("function Card(",                  "Card helper present"),
+        ("const events = rawEvents.filter", "events defined in scope"),
+    ]
+    print()
+    for needle, label in checks:
+        found = needle in txt
+        print(f"  {'OK' if found else 'MISSING'}  {label}")
+
+    hdr("Done")
+    print()
+    print("  Root cause fixed:")
+    print("    Previous patch scripts inserted JSX AFTER the closing } of")
+    print("    AnalyticsPanel (before 'function Card'), putting <SeasonalHeatmap")
+    print("    events={events}/> outside the component where events = undefined.")
+    print()
+    print("  AnalyticsPanel.jsx is now a single complete file.")
+    print("  All cards are inside the return() with events in scope:")
+    print("    - Category bar chart (click to filter)")
+    print("    - Status donut + source list")
+    print("    - Monthly timeline")
+    print("    - Duration histogram")
+    print("    - Country table")
+    print("    - Recent events feed")
+    print("    - Seasonal heatmap  <-- fixed")
+    print("    - Export buttons")
+    print("    - Year-over-year comparison  <-- fixed")
+    print()
+    print("  Restart Vite:")
+    print("    cd frontend && npm run dev")
+    print()
+
+
+if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser(description="Fix AnalyticsPanel.jsx scope error")
+    parser.add_argument("--path", default=".", help="Project root (default: current dir)")
+    args   = parser.parse_args()
+    root   = Path(args.path).resolve()
+    if not (root / "backend").exists():
+        print(f"WARNING: {root} may not be project root. Continue? [y/N] ", end="")
+        if input().strip().lower() != "y":
+            sys.exit(0)
+    build(root)
