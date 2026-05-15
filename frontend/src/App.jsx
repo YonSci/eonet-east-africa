@@ -4,20 +4,21 @@ import FilterSidebar  from './components/FilterSidebar.jsx'
 import StatCards      from './components/StatCards.jsx'
 import MapPanel       from './components/MapPanel.jsx'
 import EventList      from './components/EventList.jsx'
+import CategoryBar    from './components/CategoryBar.jsx'
 import AnalyticsPanel from './components/AnalyticsPanel.jsx'
 import AboutPanel     from './components/AboutPanel.jsx'
 import ToastContainer from './components/ToastContainer.jsx'
 import PrintButton    from './components/PrintButton.jsx'
+import OfflineBanner  from './components/OfflineBanner.jsx'
 import useAppStore, {
   ALL_CATS, readURLFilters, writeURLFilters,
 } from './store/useAppStore.js'
 import { useEvents } from './api/queries.js'
-import OfflineBanner from './components/OfflineBanner.jsx'
 
 const TABS = [
-  { id:'map',       label:'Map view'  },
-  { id:'analytics', label:'Analytics' },
-  { id:'about',     label:'About'     },
+  { id: 'map',       label: 'Map view'  },
+  { id: 'analytics', label: 'Analytics' },
+  { id: 'about',     label: 'About'     },
 ]
 
 function useIsMobile() {
@@ -33,10 +34,9 @@ function useIsMobile() {
 }
 
 function EventWatcher() {
-  const { data: events }  = useEvents()
-  const addToast          = useAppStore((s) => s.addToast)
-  const prevIdsRef        = useRef(null)
-
+  const { data: events } = useEvents()
+  const addToast         = useAppStore((s) => s.addToast)
+  const prevIdsRef       = useRef(null)
   useEffect(() => {
     if (!events || events.length === 0) return
     const currentIds = new Set(events.map((e) => e.id))
@@ -50,7 +50,6 @@ function EventWatcher() {
     }
     prevIdsRef.current = currentIds
   }, [events, addToast])
-
   return null
 }
 
@@ -62,7 +61,7 @@ export default function App() {
     setDateMode, setStartDate, setEndDate, toggleSidebar,
   } = useAppStore()
 
-  const [activeTab,     setActiveTab]    = useState('map')
+  const [activeTab,      setActiveTab]      = useState('map')
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const isMobile = useIsMobile()
 
@@ -91,51 +90,64 @@ export default function App() {
     if (!isMobile || !mobileMenuOpen) return
     function handle(e) {
       if (!e.target.closest('.filter-sidebar') &&
-          !e.target.closest('.menu-btn')) {
-        setMobileMenuOpen(false)
-      }
+          !e.target.closest('.menu-btn')) setMobileMenuOpen(false)
     }
     document.addEventListener('mousedown', handle)
     return () => document.removeEventListener('mousedown', handle)
   }, [isMobile, mobileMenuOpen])
 
-  const showSidebar   = (isMobile ? true : sidebarOpen) && activeTab !== 'about'
+  const showSidebar   = activeTab !== 'about'
   const showStatCards = activeTab !== 'about'
-
-  const sidebarClass = 'filter-sidebar' +
+  const sidebarClass  = 'filter-sidebar' +
     (isMobile && mobileMenuOpen ? ' mobile-open' : '')
 
   return (
+    /*
+     * Root: full viewport height, no overflow -- children manage their own scroll.
+     * The key fix: every layer uses display:flex + flex:1 + minHeight:0.
+     * minHeight:0 overrides the default min-height:auto that prevents flex children
+     * from shrinking below their content size, which was causing the white-space gap.
+     */
     <div style={{ display:'flex', flexDirection:'column',
-                  height: isMobile ? 'auto' : '100vh',
-                  minHeight:'100vh', overflow: isMobile ? 'auto' : 'hidden' }}>
+                  height:'100vh', overflow:'hidden' }}>
       <ToastContainer />
-      <OfflineBanner />
       <EventWatcher />
-
-      {/* Print header */}
       <div id="print-header-inject" className="print-only print-header" />
 
       <TopNav isMobile={isMobile} onMenuClick={() => setMobileMenuOpen((v) => !v)} />
+      <OfflineBanner />
 
-      {/* Mobile sidebar overlay backdrop */}
+      {/* Mobile sidebar backdrop */}
       {isMobile && mobileMenuOpen && (
         <div onClick={() => setMobileMenuOpen(false)} style={{
-          position:'fixed', inset:0, background:'rgba(0,0,0,0.4)',
-          zIndex:2999,
+          position:'fixed', inset:0, background:'rgba(0,0,0,0.4)', zIndex:2999,
         }} />
       )}
 
-      <div style={{ display:'flex', flex:1,
-                    overflow: isMobile ? 'visible' : 'hidden' }}>
+      {/* Body: sidebar + main -- fills all remaining height */}
+      <div style={{ display:'flex', flex:1, minHeight:0, overflow:'hidden' }}>
 
-        {/* Sidebar -- always in DOM on mobile (slides via CSS) */}
+        {/* Sidebar -- height constrained so inner scroll works */}
         {showSidebar && (
-          <div className={sidebarClass}>
+          <aside
+            className={sidebarClass}
+            style={{
+              width: 'var(--sidebar-w)',
+              display: 'flex',
+              flexDirection: 'column',
+              height: '100%',      /* explicit height so overflow:auto triggers */
+              minHeight: 0,
+              flexShrink: 0,
+              background: 'var(--bg-surface)',
+              borderRight: '1px solid var(--border-primary)',
+              overflow: 'hidden',
+            }}
+          >
             {isMobile && (
-              <div style={{ padding:'12px 14px', borderBottom:'1px solid var(--border-primary)',
+              <div style={{ padding:'12px 14px',
+                            borderBottom:'1px solid var(--border-primary)',
                             display:'flex', justifyContent:'space-between',
-                            alignItems:'center' }}>
+                            alignItems:'center', flexShrink:0 }}>
                 <span style={{ fontSize:12, fontWeight:600,
                                color:'var(--text-secondary)' }}>Filters</span>
                 <button onClick={() => setMobileMenuOpen(false)}
@@ -145,12 +157,14 @@ export default function App() {
                 </button>
               </div>
             )}
+            {/* FilterSidebar handles its own internal scroll */}
             <FilterSidebar />
-          </div>
+          </aside>
         )}
 
+        {/* Main content */}
         <main style={{ flex:1, display:'flex', flexDirection:'column',
-                       overflow: isMobile ? 'visible' : 'hidden', minWidth:0 }}>
+                       minHeight:0, overflow:'hidden' }}>
 
           {showStatCards && <StatCards />}
 
@@ -193,8 +207,7 @@ export default function App() {
                            background:'transparent', color:'var(--text-secondary)',
                            cursor:'pointer', display:'flex', alignItems:'center', gap:5 }}>
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" strokeWidth="2" strokeLinecap="round"
-                    strokeLinejoin="round">
+                    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
                     <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
                   </svg>
@@ -207,16 +220,27 @@ export default function App() {
 
           {/* Map tab */}
           {activeTab === 'map' && (
-            <div className="map-event-row"
-              style={{ flex:1, display:'flex',
-                       overflow: isMobile ? 'visible' : 'hidden',
-                       flexDirection: isMobile ? 'column' : 'row' }}>
-              <div className="map-fill" style={{ flex:1, minHeight: isMobile ? '55vh' : 'auto' }}>
+            /*
+             * This column fills ALL remaining height after the tab bar.
+             * Map grows to fill, CategoryBar is fixed-height at the bottom.
+             */
+            <div style={{
+              flex: 1, minHeight: 0,
+              display: 'flex',
+              flexDirection: isMobile ? 'column' : 'row',
+              overflow: 'hidden',
+            }}>
+              {/* Left: map + category bar stacked vertically */}
+              <div style={{ flex:1, minWidth:0, minHeight:0,
+                            display:'flex', flexDirection:'column', overflow:'hidden' }}>
+                {/* Map fills all available space in this column */}
                 <MapPanel />
+                {/* Category bar uses the white space below the map */}
+                <CategoryBar />
               </div>
-              <div className="event-right-panel">
-                <EventList />
-              </div>
+
+              {/* Right: event list panel -- full height */}
+              <EventList />
             </div>
           )}
 

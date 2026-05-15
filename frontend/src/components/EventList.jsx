@@ -73,14 +73,16 @@ export default function EventList() {
 
   return (
     <div style={{
-      width:       panelWidth,
-      flexShrink:  0,
-      display:     'flex',
+      width:         panelWidth,
+      flexShrink:    0,
+      display:       'flex',
       flexDirection: 'column',
-      background:  'var(--bg-surface)',
-      borderLeft:  '1px solid var(--border-primary)',
-      overflow:    'hidden',
-      transition:  'width 0.2s ease',
+      background:    'var(--bg-surface)',
+      borderLeft:    '1px solid var(--border-primary)',
+      overflow:      'hidden',
+      transition:    'width 0.2s ease',
+      height:        '100%',   /* explicit height so inner flex:1 works */
+      minHeight:     0,
     }}>
 
       {/* Collapse toggle strip */}

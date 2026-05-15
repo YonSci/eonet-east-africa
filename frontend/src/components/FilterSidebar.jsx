@@ -84,13 +84,11 @@ export default function FilterSidebar() {
   const countryName = selectedCountry ? (COUNTRY_MAP[selectedCountry] || selectedCountry) : null
 
   return (
-    <aside className="no-print filter-sidebar" style={{
-      width:'var(--sidebar-w)', background:'var(--bg-surface)',
-      borderRight:'1px solid var(--border-primary)',
+    <div className="no-print" style={{
       display:'flex', flexDirection:'column',
-      overflow:'hidden', flexShrink:0,
+      flex:1, minHeight:0, overflow:'hidden',
     }}>
-      <div style={{ overflowY:'auto', flex:1, padding:'14px 12px' }}>
+      <div style={{ overflowY:'auto', flex:1, minHeight:0, padding:'14px 12px' }}>
 
         {/* -- Active country filter -- */}
         {countryName && (
@@ -288,6 +286,6 @@ export default function FilterSidebar() {
           </a>
         </Section>
       </div>
-    </aside>
+    </div>
   )
 }
