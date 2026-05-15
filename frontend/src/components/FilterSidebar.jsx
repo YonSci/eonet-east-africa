@@ -56,7 +56,7 @@ export default function FilterSidebar() {
     startDate,        setStartDate,
     endDate,          setEndDate,
     selectedCountry,  setSelectedCountry,
-    magFilter,        setMagFilter,
+    magFilters,       setMagFilter,  clearMagFilters,
   } = useAppStore()
 
   const { data: summary }    = useSummary()
@@ -66,13 +66,20 @@ export default function FilterSidebar() {
   const allOn  = activeCategories.length === ALL_CATS.length
   const noneOn = activeCategories.length === 0
 
-  // Magnitude slider -- only show when magnitude-capable cats are active
-  const hasMagCat = activeCategories.some((c) => MAG_CATS.includes(c))
-  const magEvents = rawEvents.filter((ev) => ev.magnitude != null)
-  const maxMag    = useMemo(() => {
-    if (!magEvents.length) return 10
-    return Math.ceil(Math.max(...magEvents.map((e) => e.magnitude.value || 0)))
-  }, [magEvents])
+  // Per-category magnitude sliders
+  const hasMagCat     = activeCategories.some((c) => MAG_CATS.includes(c))
+  const activeMagCats = activeCategories.filter((c) => MAG_CATS.includes(c))
+
+  // Max magnitude per category derived from fetched events (excludes wildfire FRP)
+  const catMaxMag = useMemo(() => {
+    const result = {}
+    ;(rawEvents || []).filter((ev) => ev.magnitude != null && MAG_CATS.includes(ev.category))
+      .forEach((ev) => {
+        const v = ev.magnitude.value || 0
+        if (!result[ev.category] || v > result[ev.category]) result[ev.category] = v
+      })
+    return result
+  }, [rawEvents])
 
   const countryName = selectedCountry ? (COUNTRY_MAP[selectedCountry] || selectedCountry) : null
 
@@ -163,33 +170,70 @@ export default function FilterSidebar() {
           )}
         </Section>
 
-        {/* -- Magnitude filter (only when relevant) -- */}
-        {hasMagCat && (
-          <Section label="Minimum magnitude">
-            <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:6 }}>
-              <input type="range" min="0" max={maxMag} step="0.5"
-                value={magFilter}
-                onChange={(e) => setMagFilter(parseFloat(e.target.value))}
-                style={{ flex:1, accentColor:'#7F77DD' }} />
-              <span style={{ fontSize:13, fontWeight:600, minWidth:30,
-                             textAlign:'right', color:'#7F77DD' }}>
-                {magFilter > 0 ? magFilter.toFixed(1) : 'off'}
-              </span>
+        {/* -- Per-category magnitude filters -- */}
+        {hasMagCat && activeMagCats.map((cat) => {
+          const META = {
+            earthquakes:         { label:'Richter',       unit:'M',   max:9,   step:0.5, dec:1,
+              desc:'M3.0 minor, M4.5+ widely felt, M6.0+ damaging' },
+            severeStorms:        { label:'Wind speed',     unit:'kts', max:200, step:5,   dec:0,
+              desc:'Storm: 34-64 kts. Cat 1: 64 kts. Cat 5: 137+ kts' },
+            floods:              { label:'Water depth',    unit:'m',   max:10,  step:0.5, dec:1,
+              desc:'Reported water depth above normal level (metres)' },
+            temperatureExtremes: { label:'Temperature',   unit:'C',   max:50,  step:1,   dec:0,
+              desc:'Recorded temperature in degrees Celsius' },
+          }
+          const meta    = META[cat] || { label:cat, unit:'', max:100, step:1, dec:1, desc:'' }
+          const dataMax = catMaxMag[cat] ? Math.ceil(catMaxMag[cat]) : 0
+          const sliderMax = Math.max(dataMax, meta.max)
+          const val     = magFilters[cat] || 0
+          const catColor = (CATEGORIES[cat] || {}).color || '#7F77DD'
+          return (
+            <div key={cat} style={{ marginBottom:16 }}>
+              <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:5 }}>
+                <span style={{ width:8, height:8, borderRadius:'50%',
+                               background:catColor, flexShrink:0 }} />
+                <span style={{ fontSize:11, fontWeight:600,
+                               color:'var(--text-secondary)', flex:1 }}>
+                  {(CATEGORIES[cat] || {}).label || cat}
+                </span>
+                <span style={{ fontSize:10, color:'var(--text-muted)' }}>
+                  {meta.label}
+                </span>
+              </div>
+              <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:4 }}>
+                <input
+                  type="range"
+                  min="0"
+                  max={sliderMax}
+                  step={meta.step}
+                  value={val}
+                  onChange={(e) => setMagFilter(cat, parseFloat(e.target.value))}
+                  style={{ flex:1, accentColor:catColor }}
+                />
+                <span style={{ fontSize:12, fontWeight:600, minWidth:44,
+                               textAlign:'right', color:catColor,
+                               fontFamily:'var(--font-mono, monospace)' }}>
+                  {val > 0
+                    ? (cat === 'earthquakes' ? 'M' : '') + val.toFixed(meta.dec) + (cat === 'earthquakes' ? '' : ' ' + meta.unit)
+                    : 'off'}
+                </span>
+              </div>
+              <div style={{ fontSize:10, color:'var(--text-muted)', lineHeight:1.5 }}>
+                {val > 0
+                  ? 'Hiding ' + (CATEGORIES[cat]||{}).label + ' below ' + val.toFixed(meta.dec) + ' ' + meta.unit + '. Events without magnitude always shown.'
+                  : meta.desc}
+              </div>
             </div>
-            <div style={{ fontSize:11, color:'var(--text-muted)', lineHeight:1.5 }}>
-              {magFilter > 0
-                ? 'Hiding events with magnitude below ' + magFilter.toFixed(1) + '. Events without magnitude data are always shown.'
-                : 'Slide right to hide low-magnitude events. Applies to earthquakes, storms, and floods.'}
-            </div>
-            {magFilter > 0 && (
-              <button onClick={() => setMagFilter(0)}
-                style={{ marginTop:6, fontSize:11, padding:'3px 8px', borderRadius:4,
-                         border:'1px solid var(--border-primary)', background:'transparent',
-                         color:'var(--text-secondary)', cursor:'pointer' }}>
-                Clear magnitude filter
-              </button>
-            )}
-          </Section>
+          )
+        })}
+        {hasMagCat && Object.values(magFilters).some((v) => v > 0) && (
+          <button
+            onClick={clearMagFilters}
+            style={{ fontSize:11, padding:'3px 10px', borderRadius:4, marginBottom:14,
+                     border:'1px solid var(--border-primary)', background:'transparent',
+                     color:'var(--text-secondary)', cursor:'pointer' }}>
+            Clear all magnitude filters
+          </button>
         )}
 
         {/* -- Categories -- */}

@@ -296,7 +296,8 @@ export default function AboutPanel() {
 
       {/* Credits */}
       <Section title="Credits and contacts">
-        <InfoRow label="Built at"       value="East Africa Climate Services" />
+        <InfoRow label="Built by"       value="Yonas Mersha, International Livestock Research Institute (ILRI)"
+          link="https://www.ilri.org" />
         <InfoRow label="Data region" value="Greater Horn of Africa (11 countries)" />
         <InfoRow label="Data provider"  value="NASA Goddard Space Flight Center -- EONET"
           link="https://eonet.gsfc.nasa.gov" />

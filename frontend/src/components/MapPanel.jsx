@@ -54,6 +54,42 @@ export function assignCountry(coords) {
   return null
 }
 
+
+// Magnitude label by category
+function magLabel(cat) {
+  const labels = {
+    earthquakes:         'Magnitude',
+    severeStorms:        'Wind speed',
+    floods:              'Water depth',
+    temperatureExtremes: 'Temperature',
+    wildfires:           'Fire power (FRP)',
+  }
+  return labels[cat] || 'Magnitude'
+}
+
+// Format magnitude value with human-readable context
+function formatMag(value, unit, cat) {
+  if (value == null) return '--'
+  const v = typeof value === 'number' ? value : parseFloat(value)
+  if (cat === 'wildfires') {
+    // FRP in MW -- wildfire intensity from MODIS/VIIRS satellite
+    if (v >= 1000) return (v / 1000).toFixed(1) + ' GW FRP'
+    return v.toFixed(0) + ' MW FRP'
+  }
+  if (cat === 'earthquakes') return 'M' + v.toFixed(1)
+  if (cat === 'severeStorms' && (unit === 'kts' || !unit)) {
+    if (v >= 137) return v.toFixed(0) + ' kts (Cat 5)'
+    if (v >= 113) return v.toFixed(0) + ' kts (Cat 4)'
+    if (v >= 96)  return v.toFixed(0) + ' kts (Cat 3)'
+    if (v >= 83)  return v.toFixed(0) + ' kts (Cat 2)'
+    if (v >= 64)  return v.toFixed(0) + ' kts (Cat 1)'
+    if (v >= 34)  return v.toFixed(0) + ' kts (storm)'
+    return v.toFixed(0) + ' kts'
+  }
+  if (cat === 'temperatureExtremes') return v.toFixed(1) + ' C'
+  return v.toFixed(1) + (unit ? ' ' + unit : '')
+}
+
 function todayStr() { return new Date().toISOString().slice(0, 10) }
 function getCatColor(cat) { return (CATEGORIES[cat] || {}).color || '#484f58' }
 
@@ -230,7 +266,7 @@ function SatelliteControl({ satOn, setSatOn, satLayer, setSatLayer, satDate, set
 export default function MapPanel({ height }) {
   const {
     activeCategories, activeStatus, selectedEventId, selectEvent,
-    lightMode, selectedCountry, setSelectedCountry, magFilter,
+    lightMode, selectedCountry, setSelectedCountry, magFilters,
   } = useAppStore()
   const { data: rawEvents = [], isLoading, isError, error } = useEvents()
 
@@ -267,7 +303,10 @@ export default function MapPanel({ height }) {
     if (activeStatus === 'closed' && ev.status !== 'closed') return false
     if (!ev.coords) return false
     if (selectedCountry && assignCountry(ev.coords) !== selectedCountry) return false
-    if (magFilter > 0 && ev.magnitude && ev.magnitude.value < magFilter) return false
+    if (ev.magnitude && magFilters) {
+      const minMag = magFilters[ev.category] || 0
+      if (minMag > 0 && ev.magnitude.value < minMag) return false
+    }
     return true
   })
 
@@ -451,8 +490,9 @@ export default function MapPanel({ height }) {
                           <PopupRow label="Closed" value={ev.closed.slice(0,10)} />
                         )}
                         {ev.magnitude && (
-                          <PopupRow label="Magnitude"
-                            value={ev.magnitude.value+' '+(ev.magnitude.unit||'')} />
+                          <PopupRow label={magLabel(ev.category)}
+                            value={formatMag(ev.magnitude.value, ev.magnitude.unit,
+                                             ev.category)} />
                         )}
                         {cName && <PopupRow label="Country" value={cName} />}
                         <PopupRow label="Coords"

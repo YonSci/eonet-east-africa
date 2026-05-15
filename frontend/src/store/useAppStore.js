@@ -63,7 +63,13 @@ const useAppStore = create((set) => ({
   endDate:          '',
   selectedEventId:  null,
   selectedCountry:  null,   // ISO2 code e.g. 'KE', 'ET', or null
-  magFilter:        0,      // minimum magnitude value (0 = show all)
+  // Per-category magnitude minimum filters (0 = show all)
+  magFilters: {
+    earthquakes:         0,
+    severeStorms:        0,
+    floods:              0,
+    temperatureExtremes: 0,
+  },
   lightMode:        true,
   sidebarOpen:      true,
   toasts:           [],
@@ -84,7 +90,12 @@ const useAppStore = create((set) => ({
     selectedCountry: s.selectedCountry === iso2 ? null : iso2,
   })),
   clearCountry:     ()     => set({ selectedCountry: null }),
-  setMagFilter:     (v)    => set({ magFilter: v }),
+  setMagFilter: (cat, v) => set((s) => ({
+    magFilters: { ...s.magFilters, [cat]: v },
+  })),
+  clearMagFilters: () => set({ magFilters: {
+    earthquakes: 0, severeStorms: 0, floods: 0, temperatureExtremes: 0,
+  }}),
   toggleLight: () => set((s) => {
     const next = !s.lightMode
     document.documentElement.classList.toggle('light', next)
