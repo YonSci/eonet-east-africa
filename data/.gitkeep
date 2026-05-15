@@ -1,0 +1,2 @@
+# GeoJSON snapshots from validate_eonet.py --save go here.
+# These files are excluded from git by .gitignore.
