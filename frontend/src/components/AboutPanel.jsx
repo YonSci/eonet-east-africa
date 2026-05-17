@@ -525,7 +525,7 @@ export default function AboutPanel() {
             </div>
             <div style={{ fontSize: 13, color: '#185FA5', fontWeight: 600,
                           marginBottom: 4 }}>
-              Climate and Hydrology Researcher
+              Senior Climate Scientist
             </div>
             <div style={{ fontSize: 12, color: '#4a5568', marginBottom: 10 }}>
               International Livestock Research Institute (ILRI)

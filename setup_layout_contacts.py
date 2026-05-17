@@ -516,7 +516,7 @@ NEW_YONAS_AND_TEFERI = """          <a href="mailto:Y.Mersha@cgiar.org"
           </div>
           <div style={{ fontSize: 12, color: '#378ADD', fontWeight: 500,
                         marginBottom: 3 }}>
-            Climate and Hydrology Researcher
+            Senior Climate Scientist
           </div>
           <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 6 }}>
             International Livestock Research Institute (ILRI)

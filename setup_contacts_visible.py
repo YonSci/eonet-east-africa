@@ -114,7 +114,7 @@ NEW_CREDITS_BLOCK = """      {/* Credits and contacts -- standalone block, no Se
             </div>
             <div style={{ fontSize: 13, color: '#185FA5', fontWeight: 600,
                           marginBottom: 4 }}>
-              Climate and Hydrology Researcher
+              Senior Climate Scientist
             </div>
             <div style={{ fontSize: 12, color: '#4a5568', marginBottom: 10 }}>
               International Livestock Research Institute (ILRI)
@@ -219,7 +219,7 @@ def build(root: Path):
     print("         [mail] Y.Mersha@cgiar.org")
     print()
     print("    [TD] Dr. Teferi Demissie")
-    print("         Climate and Hydrology Researcher")
+    print("         Senior Climate Scientist")
     print("         International Livestock Research Institute (ILRI)")
     print("         [mail] t.demissie@cgiar.org")
     print()
