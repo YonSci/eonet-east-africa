@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import useAppStore, { ALL_CATS } from '../store/useAppStore.js'
 
-const STORAGE_KEY = 'net-ea-filter-presets'
+const STORAGE_KEY = 'nhmt-ea-filter-presets'
 
 function loadPresets() {
   try {

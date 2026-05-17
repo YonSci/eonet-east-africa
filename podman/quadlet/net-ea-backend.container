@@ -1,0 +1,26 @@
+# NHMT-EA Backend container (Quadlet)
+# Place in: ~/.config/containers/systemd/
+# Auto-started by net-ea.pod
+
+[Unit]
+Description=NHMT-EA Backend (FastAPI)
+After=network.target
+
+[Container]
+Image=localhost/net-ea-backend:latest
+ContainerName=net-ea-backend
+Pod=net-ea.pod
+EnvironmentFile=%h/.config/net-ea/backend.env
+Volume=net-ea-data:/app/data:Z
+HealthCmd=python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/')"
+HealthInterval=30s
+HealthTimeout=10s
+HealthRetries=3
+HealthStartPeriod=15s
+
+[Service]
+Restart=on-failure
+TimeoutStartSec=60
+
+[Install]
+WantedBy=net-ea.service

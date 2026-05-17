@@ -16,7 +16,7 @@ export default function PrintButton() {
         ? 'All categories'
         : activeCategories.join(', ')
       el.innerHTML =
-        '<div class="print-title">NET-EA -- Natural Event Tracker for East Africa</div>' +
+        '<div class="print-title">NHMT-EA -- Natural Hazard Monitoring & Tracking for East Africa</div>' +
         '<div class="print-subtitle">Yonas M. | Y.Mersha@cgiar.org | Climate Modelling and AI Expert</div>' +
         '<div class="print-meta">' +
           'Generated: ' + new Date().toLocaleString() + '<br/>' +

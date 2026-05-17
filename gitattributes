@@ -1,0 +1,33 @@
+# Enforce Unix LF line endings for all text files
+# Prevents CRLF issues when editing on Windows
+* text=auto eol=lf
+
+# Shell scripts must always be LF
+*.sh    text eol=lf
+
+# Python
+*.py    text eol=lf
+
+# Web files
+*.js    text eol=lf
+*.jsx   text eol=lf
+*.ts    text eol=lf
+*.tsx   text eol=lf
+*.html  text eol=lf
+*.css   text eol=lf
+*.json  text eol=lf
+
+# Config files
+*.yml   text eol=lf
+*.yaml  text eol=lf
+*.toml  text eol=lf
+*.conf  text eol=lf
+*.env   text eol=lf
+*.md    text eol=lf
+
+# Container files
+Containerfile  text eol=lf
+Dockerfile     text eol=lf
+Caddyfile      text eol=lf
+*.container    text eol=lf
+*.pod          text eol=lf

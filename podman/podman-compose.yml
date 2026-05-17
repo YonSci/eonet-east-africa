@@ -1,0 +1,57 @@
+# NHMT-EA Podman Compose
+# Usage:
+#   podman-compose -f podman/podman-compose.yml up -d
+#   podman-compose -f podman/podman-compose.yml down
+#   podman-compose -f podman/podman-compose.yml logs -f
+
+version: "3.8"
+
+services:
+
+  backend:
+    build:
+      context: ..
+      dockerfile: podman/Containerfile.backend
+    image: localhost/net-ea-backend:latest
+    container_name: net-ea-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file:
+      - ../.env
+    environment:
+      - BACKEND_HOST=0.0.0.0
+      - BACKEND_PORT=8000
+    volumes:
+      # Persist subscription data outside the container
+      - net-ea-data:/app/data
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request; urllib.request.urlopen('http://localhost:8000/')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  frontend:
+    build:
+      context: ..
+      dockerfile: podman/Containerfile.frontend
+    image: localhost/net-ea-frontend:latest
+    container_name: net-ea-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost/favicon.svg"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  net-ea-data:
+    name: net-ea-data

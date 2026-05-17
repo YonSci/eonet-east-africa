@@ -74,7 +74,7 @@ function UsageCard({ icon, title, items }) {
 
 export default function AboutPanel() {
   return (
-    <div style={{ flex: 1, overflowY: 'auto', padding: '24px 32px',
+    <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '24px 32px',
                   maxWidth: 820, margin: '0 auto' }}>
 
       {/* Header */}
@@ -93,25 +93,167 @@ export default function AboutPanel() {
           <div>
             <h1 style={{ fontSize: 20, fontWeight: 600, color: 'var(--text-primary)',
                          lineHeight: 1, marginBottom: 4 }}>
-              Natural Event Tracker for East Africa
+              Natural Hazard Monitoring & Tracking for East Africa
             </h1>
             <p style={{ fontSize: 12, color: '#1D9E75', fontWeight: 500,
                         letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-              NET-EA -- Version 2.0
+              NHMT-EA -- Version 2.0
             </p>
           </div>
         </div>
         <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.7 }}>
-          A near real-time natural hazard monitoring dashboard for the NET-EA
+          A near real-time natural hazard monitoring dashboard for the NHMT-EA
           Greater Horn of Africa region, powered by the NASA Earth Observatory
-          Natural Event Tracker (EONET) API v3.
+          Natural Hazard Monitoring & Tracking (EONET) API v3.
         </p>
       </div>
 
       {/* Purpose */}
+      {/* Dashboard features */}
+      <Section title="Dashboard features">
+
+        {[
+          {
+            group: 'Map view',
+            color: '#1D9E75',
+            items: [
+              ['Interactive Leaflet map', 'Greater Horn of Africa region with CartoDB basemap, light/dark tile layers, bounded to EA'],
+              ['Marker clustering', 'Nearby events collapse into numbered clusters. Handles 180+ events cleanly'],
+              ['Real country boundaries', 'Natural Earth 1:50m polygons for all 11 countries, embedded inline -- no network fetch'],
+              ['Country click-to-filter', 'Click any country to highlight it and filter all events and charts to that country'],
+              ['NASA GIBS satellite layers', 'True colour (Terra/VIIRS), fire detections, chlorophyll overlays. Date picker for historical imagery'],
+              ['District boundaries', 'GADM Level-1 sub-national boundaries per country after selecting a country on the map'],
+              ['Event popups', 'Category, status, title, date, magnitude, country, coordinates, source link, satellite image link'],
+              ['Category bar strip', 'Proportional colour bar and clickable category pills showing live event counts below the map'],
+            ]
+          },
+          {
+            group: 'Filter sidebar',
+            color: '#BA7517',
+            items: [
+              ['Status filter', 'Toggle between All events, Open only, and Closed only'],
+              ['Time period filter', '7d / 14d / 30d / 60d / 90d / 180d / 365d lookback, or custom start and end date range'],
+              ['Per-category magnitude sliders', 'Separate slider for earthquakes (Richter), storms (kts), floods (m), temperature (C)'],
+              ['Category toggles', '10 event categories, colour-coded with live count badges. All/None shortcuts'],
+              ['Saved filter presets', 'Save any filter combination by name. 3 built-in defaults. Stored in browser localStorage'],
+            ]
+          },
+          {
+            group: 'Event list panel',
+            color: '#378ADD',
+            items: [
+              ['Scrollable event list', 'Sortable table: date, category pill, status, title. Click a row to fly the map to that event'],
+              ['Event search', 'Filter the list by keyword matching title, category, or event ID'],
+              ['CSV export', 'Download the current filtered event list with all fields including coordinates and magnitude'],
+            ]
+          },
+          {
+            group: 'Analytics tab',
+            color: '#E8593C',
+            items: [
+              ['Category bar chart', 'Horizontal bars sorted by count. Click a bar to toggle that category on the map'],
+              ['Monthly timeline', 'Area chart of total events per month over the selected period'],
+              ['Status donut and sources', 'Open vs closed breakdown. Data sources bar chart (MODIS, USGS, GDACS, JTWC, etc.)'],
+              ['Duration histogram', 'Closed event duration binned: under 1 day, 1-7 days, 8-30 days, over 30 days'],
+              ['Country table', 'Events per country with open/closed split and proportional bar'],
+              ['Seasonal heatmap', 'Month x category grid coloured by event density. MAM, OND, and dry season bands annotated'],
+              ['Year-over-year comparison', 'Select any two years: category bars, dual-line monthly trend, biggest movers table'],
+              ['GeoJSON and CSV export', 'Export filtered events as GeoJSON (QGIS/ArcGIS compatible) or CSV'],
+            ]
+          },
+          {
+            group: 'Sharing and export',
+            color: '#639922',
+            items: [
+              ['Shareable URLs', 'Active filters encoded in the URL. Share button copies the link to clipboard with a toast confirmation'],
+              ['PDF bulletin export', 'Print-optimised layout with header showing name, email, date generated, and active filters'],
+            ]
+          },
+          {
+            group: 'Alert subscriptions',
+            color: '#1D9E75',
+            items: [
+              ['Browser notifications', 'Popup alert when the 15-minute refresh detects new events matching saved subscriptions'],
+              ['Email alerts via EmailJS', 'Confirmation email on subscribe and alert email when new events are detected. No backend needed'],
+              ['Subscription management', 'View, delete, and export subscriptions. Filter by category and country'],
+            ]
+          },
+          {
+            group: 'UX and accessibility',
+            color: '#888780',
+            items: [
+              ['Mobile responsive layout', 'Sidebar slides in as overlay on small screens. 2x2 stat cards. Map stacks above event list'],
+              ['Skeleton loading states', 'Pulsing placeholder shapes for stat cards while data fetches'],
+              ['Network error panel', 'When NASA EONET is blocked (9s timeout), shows clear panel with fix options and retry button'],
+              ['Toast notifications', 'Green toast when refresh detects new events. Auto-dismisses after 5 seconds'],
+              ['Light and dark theme', 'Toggle in top nav. Map tiles, popups, and all UI components adapt'],
+              ['Offline banner', 'Amber banner when network lost, green when reconnected. Backed by PWA service worker cache'],
+            ]
+          },
+          {
+            group: 'PWA and deployment',
+            color: '#185FA5',
+            items: [
+              ['Installable PWA', 'Install button in browser address bar. Offline mode serves last cached EONET data for 24 hours'],
+              ['Netlify deployment', 'netlify.toml auto-config. Browser-direct NASA fetch. SPA routing redirect included'],
+              ['Podman containerisation', 'Containerfile.backend (FastAPI) and Containerfile.frontend (Nginx). Rootless, daemonless'],
+              ['Hetzner server deployment', 'Deploy scripts: build locally, export images, scp to server, load and start with Nginx proxy'],
+            ]
+          },
+        ].map(({ group, color, items }) => (
+          <div key={group} style={{ marginBottom: 18 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+              <div style={{ width: 10, height: 10, borderRadius: '50%',
+                            background: color, flexShrink: 0 }} />
+              <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>
+                {group}
+              </span>
+              <span style={{ fontSize: 11, color: 'var(--text-muted)',
+                             background: 'var(--bg-elevated)',
+                             padding: '1px 6px', borderRadius: 100 }}>
+                {items.length}
+              </span>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 5,
+                          paddingLeft: 18 }}>
+              {items.map(([title, desc]) => (
+                <div key={title} style={{
+                  padding: '7px 10px',
+                  background: 'var(--bg-elevated)',
+                  border: '1px solid var(--border-muted)',
+                  borderLeft: '3px solid ' + color,
+                  borderRadius: 'var(--radius-md)',
+                }}>
+                  <div style={{ fontSize: 12, fontWeight: 600,
+                                color: 'var(--text-primary)', marginBottom: 2 }}>
+                    {title}
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--text-muted)',
+                                lineHeight: 1.4 }}>
+                    {desc}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+
+        <div style={{ marginTop: 8, padding: '8px 12px',
+                      background: 'var(--bg-elevated)',
+                      border: '1px solid var(--border-muted)',
+                      borderRadius: 'var(--radius-md)',
+                      fontSize: 11, color: 'var(--text-muted)',
+                      display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 18, fontWeight: 600,
+                         color: 'var(--text-secondary)' }}>40+</span>
+          features across 8 functional areas -- all running on NASA EONET v3
+          and Natural Earth public domain data.
+        </div>
+      </Section>
+
       <Section title="Purpose">
         <Para>
-          The Natural Event Tracker for East Africa (NET-EA) provides a unified,
+          The Natural Hazard Monitoring & Tracking for East Africa (NHMT-EA) provides a unified,
           accessible view of natural hazard events across the 11-country
           Greater Horn of Africa region. It bridges the gap between raw
           NASA satellite-derived event metadata and actionable situational
@@ -126,13 +268,13 @@ export default function AboutPanel() {
         </Para>
         <Para>
           It is designed to complement, not replace, official operational
-          monitoring systems such as NET-EA Drought Watch, FEWS NET, and GDACS.
+          monitoring systems such as NHMT-EA Drought Watch, FEWS NET, and GDACS.
           All event metadata is sourced directly from NASA EONET and reflects
           the quality and completeness of that upstream dataset.
         </Para>
       </Section>
 
-      {/* NET-EA Region */}
+      {/* NHMT-EA Region */}
       <Section title="Greater Horn of Africa region">
         <Para>
           The dashboard is geographically scoped to the 11-country Greater Horn
@@ -294,18 +436,130 @@ export default function AboutPanel() {
         <InfoRow label="Offline mode" value="12-event mock dataset for development without network access" />
       </Section>
 
-      {/* Credits */}
-      <Section title="Credits and contacts">
-        <InfoRow label="Built by"       value="Yonas Mersha, International Livestock Research Institute (ILRI)"
-          link="https://www.ilri.org" />
-        <InfoRow label="Data region" value="Greater Horn of Africa (11 countries)" />
+            {/* Credits and contacts -- standalone block, no Section wrapper */}
+      <div style={{ marginBottom: 32 }}>
+        <h2 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)',
+                     marginBottom: 16, paddingBottom: 8,
+                     borderBottom: '1px solid var(--border-primary)' }}>
+          Credits and contacts
+        </h2>
+
+        {/* --- Yonas Mersha card --- */}
+        <div style={{
+          display: 'flex', alignItems: 'flex-start', gap: 16,
+          padding: '16px 18px', marginBottom: 12,
+          background: '#ffffff',
+          border: '1.5px solid #1D9E75',
+          borderLeft: '5px solid #1D9E75',
+          borderRadius: 10,
+          boxShadow: '0 2px 8px rgba(29,158,117,0.10)',
+        }}>
+          {/* Avatar */}
+          <div style={{
+            width: 52, height: 52, borderRadius: '50%', flexShrink: 0,
+            background: '#1D9E75',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 16, fontWeight: 700, color: '#ffffff',
+            letterSpacing: '0.04em',
+          }}>
+            YM
+          </div>
+          {/* Info */}
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 16, fontWeight: 700,
+                          color: '#0F2E24', marginBottom: 3 }}>
+              Yonas Mersha
+            </div>
+            <div style={{ fontSize: 13, color: '#1D9E75', fontWeight: 600,
+                          marginBottom: 4 }}>
+              Hydro-Climate Modelling and AI Expert
+            </div>
+            <div style={{ fontSize: 12, color: '#4a5568', marginBottom: 10 }}>
+              International Livestock Research Institute (ILRI)
+            </div>
+            <a href="mailto:Y.Mersha@cgiar.org"
+               style={{
+                 display: 'inline-flex', alignItems: 'center', gap: 6,
+                 fontSize: 13, color: '#378ADD', fontWeight: 500,
+                 textDecoration: 'none',
+                 padding: '4px 10px', borderRadius: 6,
+                 background: '#E6F1FB',
+                 border: '1px solid #378ADD44',
+               }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" strokeWidth="2" strokeLinecap="round"
+                   strokeLinejoin="round">
+                <rect x="2" y="4" width="20" height="16" rx="2"/>
+                <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+              </svg>
+              Y.Mersha@cgiar.org
+            </a>
+          </div>
+        </div>
+
+        {/* --- Dr. Teferi Demissie card --- */}
+        <div style={{
+          display: 'flex', alignItems: 'flex-start', gap: 16,
+          padding: '16px 18px', marginBottom: 20,
+          background: '#ffffff',
+          border: '1.5px solid #378ADD',
+          borderLeft: '5px solid #378ADD',
+          borderRadius: 10,
+          boxShadow: '0 2px 8px rgba(55,138,221,0.10)',
+        }}>
+          {/* Avatar */}
+          <div style={{
+            width: 52, height: 52, borderRadius: '50%', flexShrink: 0,
+            background: '#378ADD',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 16, fontWeight: 700, color: '#ffffff',
+            letterSpacing: '0.04em',
+          }}>
+            TD
+          </div>
+          {/* Info */}
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 16, fontWeight: 700,
+                          color: '#0C1A2E', marginBottom: 3 }}>
+              Dr. Teferi Demissie
+            </div>
+            <div style={{ fontSize: 13, color: '#185FA5', fontWeight: 600,
+                          marginBottom: 4 }}>
+              Climate and Hydrology Researcher
+            </div>
+            <div style={{ fontSize: 12, color: '#4a5568', marginBottom: 10 }}>
+              International Livestock Research Institute (ILRI)
+            </div>
+            <a href="mailto:t.demissie@cgiar.org"
+               style={{
+                 display: 'inline-flex', alignItems: 'center', gap: 6,
+                 fontSize: 13, color: '#185FA5', fontWeight: 500,
+                 textDecoration: 'none',
+                 padding: '4px 10px', borderRadius: 6,
+                 background: '#E6F1FB',
+                 border: '1px solid #378ADD44',
+               }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" strokeWidth="2" strokeLinecap="round"
+                   strokeLinejoin="round">
+                <rect x="2" y="4" width="20" height="16" rx="2"/>
+                <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+              </svg>
+              t.demissie@cgiar.org
+            </a>
+          </div>
+        </div>
+
+        {/* Info rows */}
+        <InfoRow label="Data region"    value="Greater Horn of Africa (11 countries)" />
         <InfoRow label="Data provider"  value="NASA Goddard Space Flight Center -- EONET"
           link="https://eonet.gsfc.nasa.gov" />
         <InfoRow label="Satellite data" value="NASA MODIS, VIIRS, Ocean Color instruments" />
         <InfoRow label="Hazard sources" value="USGS, GDACS, Smithsonian GVP, JTWC, FEWS NET, ReliefWeb" />
         <InfoRow label="Open source"    value="MIT License -- source code on GitHub" />
-      </Section>
+      </div>
 
+      {/* Email alert subscriptions */}
       {/* Email alert subscriptions */}
       <Section title="Email alert subscriptions">
         <Para>
@@ -328,7 +582,7 @@ export default function AboutPanel() {
             and reflects the completeness and accuracy of that upstream dataset.
             It should not be used as the sole basis for operational disaster
             response decisions. For authoritative hazard information, consult
-            NET-EA, national meteorological agencies, and official disaster
+            NHMT-EA, national meteorological agencies, and official disaster
             management authorities in the relevant country.
           </p>
         </div>
@@ -348,7 +602,7 @@ export default function AboutPanel() {
                     display: 'flex', gap: 20, flexWrap: 'wrap',
                     alignItems: 'center' }}>
         <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-          NET-EA v2.0 -- Natural Event Tracker for East Africa 2025
+          NHMT-EA v3.0 -- Yonas Mersha -- Y.Mersha@cgiar.org -- ILRI
         </span>
         <a href="https://eonet.gsfc.nasa.gov" target="_blank" rel="noreferrer"
            style={{ fontSize: 11, color: '#378ADD' }}>NASA EONET</a>

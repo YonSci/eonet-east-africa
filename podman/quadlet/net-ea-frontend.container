@@ -1,0 +1,23 @@
+# NHMT-EA Frontend container (Quadlet)
+# Place in: ~/.config/containers/systemd/
+
+[Unit]
+Description=NHMT-EA Frontend (Nginx + React)
+After=net-ea-backend.service
+
+[Container]
+Image=localhost/net-ea-frontend:latest
+ContainerName=net-ea-frontend
+Pod=net-ea.pod
+HealthCmd=wget -qO- http://localhost/favicon.svg
+HealthInterval=30s
+HealthTimeout=5s
+HealthRetries=3
+HealthStartPeriod=10s
+
+[Service]
+Restart=on-failure
+TimeoutStartSec=30
+
+[Install]
+WantedBy=net-ea.service

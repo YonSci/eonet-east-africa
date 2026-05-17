@@ -17,8 +17,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'favicon.svg'],
       manifest: {
-        name: 'NET-EA -- Natural Event Tracker for East Africa',
-        short_name: 'NET-EA',
+        name: 'NHMT-EA -- Natural Hazard Monitoring & Tracking for East Africa',
+        short_name: 'NHMT-EA',
         description: 'Near real-time natural hazard monitoring for the Greater Horn of Africa',
         theme_color: '#1D9E75',
         background_color: '#f6f8fa',

@@ -40,13 +40,13 @@ export default function TopNav({ isMobile, onMenuClick }) {
       <div style={{ display:'flex', alignItems:'baseline', gap: isMobile ? 4 : 8 }}>
         <span style={{ fontWeight:600, fontSize: isMobile ? 13 : 14,
                        color:'var(--text-primary)', letterSpacing:'-0.01em' }}>
-          {isMobile ? 'NET-EA' : 'Natural Event Tracker for East Africa'}
+          {isMobile ? 'NHMT-EA' : 'Natural Hazard Monitoring & Tracking for East Africa'}
         </span>
         <span style={{ fontSize:11, fontWeight:700, padding:'1px 7px',
                        borderRadius:4, background:'#1D9E7522',
                        border:'1px solid #1D9E7544', color:'#0F6E56',
                        letterSpacing:'0.04em' }}>
-          NET-EA
+          NHMT-EA
         </span>
       </div>
 

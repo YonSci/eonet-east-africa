@@ -10,11 +10,40 @@ const ISO3 = {
 
 const GADM_BASE = 'https://geodata.ucdavis.edu/gadm/gadm4.1/json'
 
+// Local static GeoJSON files (placed in /public/geo/) take priority over GADM
+// Key: ISO2, Value: path relative to the app's base URL
+const LOCAL_DISTRICTS = {
+  SO: 'geo/som_admin1.geojson',  // Somalia regions (18 states)
+  KE: 'geo/ken_admin1.geojson',  // Kenya provinces (47 counties)
+  SD: 'geo/sdn_admin1.geojson',  // Sudan states (18 states)
+  ER: 'geo/eri_admin1.geojson',  // Eritrea regions (6 regions)
+  DJ: 'geo/dji_admin1.geojson',  // Djibouti regions (6 regions)
+  RW: 'geo/rwa_admin1.geojson',  // Rwanda provinces (5 provinces)
+  SS: 'geo/ssd_admin1.geojson',  // South Sudan states (10 states)
+  TZ: 'geo/tza_admin1.geojson',  // Tanzania regions (31 regions)
+  UG: 'geo/uga_admin1.geojson',  // Uganda districts (135 districts)
+  ET: 'geo/eth_admin1.geojson',  // Ethiopia regions (11 regions)
+  BI: 'geo/bdi_admin1.geojson',  // Burundi provinces (18 provinces)  
+}
+
 // Cache fetched GeoJSON in memory to avoid repeated network calls
 const geoCache = {}
 
 async function fetchDistricts(iso2) {
   if (geoCache[iso2]) return geoCache[iso2]
+
+  // Prefer bundled local file if available
+  if (LOCAL_DISTRICTS[iso2]) {
+    const base = import.meta.env.BASE_URL || '/'
+    const url  = base.replace(/\/$/, '') + '/' + LOCAL_DISTRICTS[iso2]
+    const res  = await fetch(url)
+    if (!res.ok) throw new Error('HTTP ' + res.status)
+    const data = await res.json()
+    geoCache[iso2] = data
+    return data
+  }
+
+  // Fall back to GADM for countries without a local file
   const iso3 = ISO3[iso2]
   if (!iso3) return null
   const url = GADM_BASE + '/gadm41_' + iso3 + '_1.json'
@@ -45,7 +74,11 @@ export function DistrictLayer({ iso2, lightMode }) {
     fetchDistricts(iso2)
       .then((data) => { setGeo(data); setLoading(false) })
       .catch((err) => {
-        setError('Could not load district boundaries: ' + err.message)
+        const isBlocked = err.name === 'AbortError' || err.message.includes('Failed') || err.message.includes('NetworkError')
+        setError(isBlocked
+          ? 'District boundaries require internet access to geodata.ucdavis.edu. '
+            + 'Try on a mobile hotspot or open network.'
+          : 'Could not load district boundaries: ' + err.message)
         setLoading(false)
       })
   }, [iso2])

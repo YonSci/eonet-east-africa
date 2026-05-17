@@ -1,0 +1,18 @@
+# NHMT-EA Podman Pod definition (Quadlet)
+# Place in: ~/.config/containers/systemd/
+# Then run: systemctl --user daemon-reload
+#           systemctl --user start net-ea.service
+
+[Unit]
+Description=NHMT-EA Natural Hazard Monitoring & Tracking for East Africa
+Documentation=https://github.com/YOUR_USERNAME/eonet-east-africa
+
+[Pod]
+PublishPort=3000:80
+PublishPort=8000:8000
+
+[Service]
+Restart=on-failure
+
+[Install]
+WantedBy=default.target

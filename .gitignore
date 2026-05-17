@@ -46,3 +46,8 @@ coverage.xml
 
 # Docker
 docker/*.env
+
+# Podman
+podman/*.env
+podman/quadlet/*.env
+*.tar.gz

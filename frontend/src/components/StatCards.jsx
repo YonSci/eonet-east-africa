@@ -29,10 +29,10 @@ export default function StatCards() {
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
-                  gap: 10, padding: '10px 14px 0', flexShrink: 0 }}>
+                  gap: 8, padding: '6px 14px 0', flexShrink: 0 }}>
       {isError ? (
-        <div style={{ gridColumn:'1 / -1', padding:'10px 14px',
-                      fontSize:12, color:'#BA7517', fontWeight:500,
+        <div style={{ gridColumn:'1 / -1', padding:'8px 12px',
+                      fontSize:11, color:'#BA7517', fontWeight:500,
                       background:'#FAEEDA', borderRadius:'var(--radius-md)',
                       border:'1px solid #BA751733' }}>
           {isNetworkBlockedError(error)
@@ -43,9 +43,9 @@ export default function StatCards() {
         Array.from({ length: 4 }).map((_, i) => (
           <div key={i} style={{ background: 'var(--bg-surface)',
                                 border: '1px solid var(--border-primary)',
-                                borderRadius: 'var(--radius-md)', padding: '10px 14px' }}>
-            <SkeletonRect h={26} w="50%" style={{ marginBottom: 6 }} />
-            <SkeletonRect h={13} w="65%" />
+                                borderRadius: 'var(--radius-md)', padding: '6px 10px' }}>
+            <SkeletonRect h={22} w="50%" style={{ marginBottom: 4 }} />
+            <SkeletonRect h={11} w="65%" />
           </div>
         ))
       ) : (
@@ -54,21 +54,21 @@ export default function StatCards() {
             background: 'var(--bg-surface)',
             border: '1px solid var(--border-primary)',
             borderTop: '2px solid ' + c.color,
-            borderRadius: 'var(--radius-md)', padding: '10px 14px',
+            borderRadius: 'var(--radius-md)', padding: '6px 10px',
           }}>
-            <div style={{ fontSize: 24, fontWeight: 600, color: c.color, lineHeight: 1,
-                          marginBottom: 4 }}>
+            <div style={{ fontSize: 20, fontWeight: 600, color: c.color, lineHeight: 1,
+                          marginBottom: 2 }}>
               {c.value}
             </div>
-            <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)',
-                          marginBottom: 2 }}>
+            <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-primary)',
+                          marginBottom: 1 }}>
               {c.label}
             </div>
-            <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{c.sub}</div>
+            <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>{c.sub}</div>
             {c.bar != null && (
-              <div style={{ marginTop: 8, height: 3, background: 'var(--bg-elevated)',
-                            borderRadius: 2 }}>
-                <div style={{ height: '100%', borderRadius: 2, width: c.bar + '%',
+              <div style={{ marginTop: 6, height: 2, background: 'var(--bg-elevated)',
+                            borderRadius: 1 }}>
+                <div style={{ height: '100%', borderRadius: 1, width: c.bar + '%',
                               background: c.barColor, transition: 'width 0.5s' }} />
               </div>
             )}

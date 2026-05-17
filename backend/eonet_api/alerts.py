@@ -170,8 +170,7 @@ def _build_email(new_events: list, subscriber: dict) -> str:
         "You are receiving this because you subscribed at NET-EA.",
         "To unsubscribe, visit the Alerts section of the dashboard.",
     ]
-    return "
-".join(lines)
+    return "\n".join(lines)
 
 
 def send_alerts(new_events: list) -> None:

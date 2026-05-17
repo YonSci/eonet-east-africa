@@ -80,6 +80,13 @@ html:not(.light) .leaflet-container { background: #1a2332 !important; }
 .leaflet-control-attribution {
   background: rgba(255,255,255,0.75) !important;
   color: var(--text-muted) !important;
+  top: 8px !important;
+  right: 8px !important;
+  left: auto !important;
+  bottom: auto !important;
+  font-size: 10px !important;
+  max-width: 200px !important;
+  text-align: right !important;
 }
 html:not(.light) .leaflet-control-attribution {
   background: rgba(13,17,23,0.7) !important;
@@ -237,4 +244,9 @@ html:not(.light) .leaflet-control-attribution {
 
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+/* Districts button tooltip */
+.districts-btn-wrap:hover .districts-tooltip {
+  display: block !important;
 }

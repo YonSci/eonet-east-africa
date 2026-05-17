@@ -1,0 +1,47 @@
+# EmailJS configuration for browser-based email delivery
+# Get these from https://www.emailjs.com (free account)
+#
+# 1. Dashboard -> Email Services -> Add Service -> Gmail -> Connect
+# 2. Dashboard -> Email Templates -> Create Template (see TEMPLATE GUIDE below)
+# 3. Account -> API Keys -> Public Key
+#
+# TEMPLATE GUIDE -- paste these into EmailJS template editor:
+#
+# Template 1 (confirmation):
+#   Name: NHMT-EA Confirmation
+#   Subject: You are subscribed to NHMT-EA alerts
+#   Body (HTML):
+#     <h2>NHMT-EA Alert Subscription Confirmed</h2>
+#     <p>Hi {{to_name}},</p>
+#     <p>You are now subscribed to receive natural event alerts for:</p>
+#     <p><strong>Categories:</strong> {{categories}}</p>
+#     <p><strong>Countries:</strong> {{countries}}</p>
+#     <p>You will receive an email when new events matching your filters
+#     are detected during the 15-minute data refresh.</p>
+#     <p>To unsubscribe, visit the About page of the dashboard and
+#     remove your subscription from the list.</p>
+#     <p>-- NHMT-EA Team</p>
+#   To email: {{to_email}}
+#   From name: NHMT-EA Natural Hazard Monitoring & Tracking
+#
+# Template 2 (alert):
+#   Name: NHMT-EA Event Alert
+#   Subject: NHMT-EA Alert: {{event_count}} new {{categories}} event(s) detected
+#   Body (HTML):
+#     <h2>Natural Event Alert -- {{event_count}} new event(s)</h2>
+#     <p>Hi {{to_name}},</p>
+#     <p>The following new natural events were detected in your
+#     monitored region:</p>
+#     <pre style="background:#f5f5f5;padding:12px;border-radius:6px;
+#     font-family:monospace;font-size:13px;">{{event_list}}</pre>
+#     <p><strong>Categories monitored:</strong> {{categories}}</p>
+#     <p><strong>Countries monitored:</strong> {{countries}}</p>
+#     <p><a href="https://your-site.netlify.app">Open NHMT-EA dashboard</a></p>
+#     <p>-- NHMT-EA Natural Hazard Monitoring & Tracking for East Africa</p>
+#   To email: {{to_email}}
+#   From name: NHMT-EA Alerts
+
+VITE_EMAILJS_PUBLIC_KEY=YOUR_PUBLIC_KEY_HERE
+VITE_EMAILJS_SERVICE_ID=YOUR_SERVICE_ID_HERE
+VITE_EMAILJS_TEMPLATE_CONFIRM=YOUR_CONFIRMATION_TEMPLATE_ID
+VITE_EMAILJS_TEMPLATE_ALERT=YOUR_ALERT_TEMPLATE_ID

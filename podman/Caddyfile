@@ -1,0 +1,25 @@
+# NHMT-EA Caddy config -- auto-SSL alternative to Nginx
+# Install: sudo apt install -y caddy
+# Config:  sudo cp podman/Caddyfile /etc/caddy/Caddyfile
+# Reload:  sudo systemctl reload caddy
+#
+# Caddy automatically fetches and renews SSL certs from Let's Encrypt.
+# Just replace the IP below with your domain name.
+
+178.105.16.51 {
+    # Or use your domain: yourdomain.com {
+
+    # Frontend
+    reverse_proxy /* 127.0.0.1:3000
+
+    # Backend API
+    reverse_proxy /events/*  127.0.0.1:8000
+    reverse_proxy /summary   127.0.0.1:8000
+    reverse_proxy /status    127.0.0.1:8000
+    reverse_proxy /alerts/*  127.0.0.1:8000
+
+    # Logging
+    log {
+        output file /var/log/caddy/net-ea.log
+    }
+}

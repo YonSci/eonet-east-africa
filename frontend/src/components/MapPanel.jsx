@@ -9,13 +9,39 @@ import useAppStore, { CATEGORIES, COUNTRY_MAP } from '../store/useAppStore.js'
 import { useEvents } from '../api/queries.js'
 import NetworkError from './NetworkError.jsx'
 import { DistrictLayer } from './DistrictLayer.jsx'
+import { COUNTRY_GEO } from '../api/geoData.js'
 
-const ICPAC_CENTER  = [6.5, 38.0]
-const MAX_BOUNDS    = [[-16.0, 18.0], [26.0, 56.0]]
-const REGION_BOUNDS = [[-12.0, 22.0], [23.0, 52.0]]
-const ICPAC_ISO2    = ['DJ','ER','ET','KE','RW','SO','SS','SD','TZ','UG','BI']
-const GEO_BASE      = 'https://raw.githubusercontent.com/johan/world.geo.json/master/countries'
+// -- Region constants -------------------------------------------------------
+const ICPAC_CENTER   = [6.5, 38.0]
+const MAX_BOUNDS     = [[-18.0, 18.0], [26.0, 56.0]]
+const REGION_BOUNDS  = [[-14.0, 22.0], [23.0, 52.0]]
 
+// Country bbox for event assignment
+const COUNTRY_BBOX = {
+  SD:{ minLat:9,  maxLat:22, minLon:21, maxLon:38 },
+  SS:{ minLat:3,  maxLat:12, minLon:24, maxLon:36 },
+  ET:{ minLat:3,  maxLat:15, minLon:33, maxLon:48 },
+  ER:{ minLat:12, maxLat:18, minLon:36, maxLon:44 },
+  DJ:{ minLat:10, maxLat:13, minLon:41, maxLon:44 },
+  SO:{ minLat:-2, maxLat:12, minLon:40, maxLon:52 },
+  KE:{ minLat:-5, maxLat:5,  minLon:33, maxLon:42 },
+  UG:{ minLat:-2, maxLat:4,  minLon:29, maxLon:35 },
+  TZ:{ minLat:-12,maxLat:0,  minLon:29, maxLon:41 },
+  RW:{ minLat:-3, maxLat:0,  minLon:28, maxLon:31 },
+  BI:{ minLat:-5, maxLat:-2, minLon:28, maxLon:31 },
+}
+
+export function assignCountry(coords) {
+  if (!coords) return null
+  const lon = coords[0]; const lat = coords[1]
+  for (const [iso, b] of Object.entries(COUNTRY_BBOX)) {
+    if (lon >= b.minLon && lon <= b.maxLon &&
+        lat >= b.minLat && lat <= b.maxLat) return iso
+  }
+  return null
+}
+
+// -- Tile layers ------------------------------------------------------------
 const TILE_LIGHT     = 'https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png'
 const TILE_DARK      = 'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png'
 const TILE_LBL_LIGHT = 'https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png'
@@ -30,66 +56,6 @@ const GIBS_LAYERS = [
   { id: 'MODIS_Terra_Chlorophyll_A',                  label: 'Chlorophyll (Terra)'  },
 ]
 
-// Country bounding boxes for event assignment
-const COUNTRY_BBOX = {
-  SD: { minLat: 9, maxLat: 22, minLon: 21, maxLon: 38 },
-  SS: { minLat: 3, maxLat: 12, minLon: 24, maxLon: 36 },
-  ET: { minLat: 3, maxLat: 15, minLon: 33, maxLon: 48 },
-  ER: { minLat:12, maxLat: 18, minLon: 36, maxLon: 44 },
-  DJ: { minLat:10, maxLat: 13, minLon: 41, maxLon: 44 },
-  SO: { minLat:-2, maxLat: 12, minLon: 40, maxLon: 52 },
-  KE: { minLat:-5, maxLat:  5, minLon: 33, maxLon: 42 },
-  UG: { minLat:-2, maxLat:  4, minLon: 29, maxLon: 35 },
-  TZ: { minLat:-12,maxLat:  0, minLon: 29, maxLon: 41 },
-  RW: { minLat:-3, maxLat:  0, minLon: 28, maxLon: 31 },
-  BI: { minLat:-5, maxLat: -2, minLon: 28, maxLon: 31 },
-}
-
-export function assignCountry(coords) {
-  if (!coords) return null
-  const lon = coords[0]; const lat = coords[1]
-  for (const [iso, b] of Object.entries(COUNTRY_BBOX)) {
-    if (lon >= b.minLon && lon <= b.maxLon && lat >= b.minLat && lat <= b.maxLat) return iso
-  }
-  return null
-}
-
-
-// Magnitude label by category
-function magLabel(cat) {
-  const labels = {
-    earthquakes:         'Magnitude',
-    severeStorms:        'Wind speed',
-    floods:              'Water depth',
-    temperatureExtremes: 'Temperature',
-    wildfires:           'Fire power (FRP)',
-  }
-  return labels[cat] || 'Magnitude'
-}
-
-// Format magnitude value with human-readable context
-function formatMag(value, unit, cat) {
-  if (value == null) return '--'
-  const v = typeof value === 'number' ? value : parseFloat(value)
-  if (cat === 'wildfires') {
-    // FRP in MW -- wildfire intensity from MODIS/VIIRS satellite
-    if (v >= 1000) return (v / 1000).toFixed(1) + ' GW FRP'
-    return v.toFixed(0) + ' MW FRP'
-  }
-  if (cat === 'earthquakes') return 'M' + v.toFixed(1)
-  if (cat === 'severeStorms' && (unit === 'kts' || !unit)) {
-    if (v >= 137) return v.toFixed(0) + ' kts (Cat 5)'
-    if (v >= 113) return v.toFixed(0) + ' kts (Cat 4)'
-    if (v >= 96)  return v.toFixed(0) + ' kts (Cat 3)'
-    if (v >= 83)  return v.toFixed(0) + ' kts (Cat 2)'
-    if (v >= 64)  return v.toFixed(0) + ' kts (Cat 1)'
-    if (v >= 34)  return v.toFixed(0) + ' kts (storm)'
-    return v.toFixed(0) + ' kts'
-  }
-  if (cat === 'temperatureExtremes') return v.toFixed(1) + ' C'
-  return v.toFixed(1) + (unit ? ' ' + unit : '')
-}
-
 function todayStr() { return new Date().toISOString().slice(0, 10) }
 function getCatColor(cat) { return (CATEGORIES[cat] || {}).color || '#484f58' }
 
@@ -101,9 +67,15 @@ function worldviewURL(ev) {
     (lon-pad)+','+(lat-pad)+','+(lon+pad)+','+(lat+pad)+'&t='+date
 }
 
+// -- Leaflet helpers --------------------------------------------------------
 function FitRegion() {
   const map = useMap()
-  useEffect(() => { map.fitBounds(REGION_BOUNDS, { padding: [10,10] }) }, [map])
+  useEffect(() => {
+    map.fitBounds(REGION_BOUNDS, {
+      paddingTopLeft: [50, 10],
+      paddingBottomRight: [150, 100],
+    })
+  }, [map])
   return null
 }
 
@@ -120,15 +92,16 @@ function FlyTo({ events, selectedId }) {
 function OutsideMask() {
   const strips = [
     [[-90,-180],[90,22]], [[-90,52],[90,180]],
-    [[23,22],[90,52]], [[-90,22],[-12,52]],
+    [[23,22],[90,52]], [[-90,22],[-14,52]],
   ]
   return strips.map((b, i) => (
     <Rectangle key={i} bounds={b}
-      pathOptions={{ color:'transparent', fillColor:'#000', fillOpacity:0.4, weight:0 }} />
+      pathOptions={{ color:'transparent', fillColor:'#000', fillOpacity:0.38, weight:0 }} />
   ))
 }
 
-function CountriesLayer({ geo, lightMode, selectedCountry, onCountryClick }) {
+// Country layer using inline GeoJSON -- no network fetch needed
+function CountriesLayer({ lightMode, selectedCountry, onCountryClick }) {
   const styleFunc = useCallback((feature) => {
     const iso2     = feature.properties && feature.properties.iso2
     const isActive = iso2 === selectedCountry
@@ -149,34 +122,11 @@ function CountriesLayer({ geo, lightMode, selectedCountry, onCountryClick }) {
     layer.on('click', () => onCountryClick(iso2))
   }, [onCountryClick])
 
-  if (!geo) return null
   const key = 'countries-' + (lightMode ? 'l' : 'd') + '-' + (selectedCountry || 'none')
-  return <GeoJSON key={key} data={geo} style={styleFunc} onEachFeature={onEachFeature} />
+  return <GeoJSON key={key} data={COUNTRY_GEO} style={styleFunc} onEachFeature={onEachFeature} />
 }
 
-function LegendRow({ color, label, dash }) {
-  return (
-    <div style={{ display:'flex', alignItems:'center', gap:6, marginTop:4 }}>
-      <svg width="16" height="12" viewBox="0 0 16 12">
-        <circle cx="8" cy="6" r="5" fill={color}
-          fillOpacity={dash ? 0.4 : 0.85} stroke={color}
-          strokeWidth={1.5} strokeDasharray={dash ? '3 2' : null} />
-      </svg>
-      <span style={{ fontSize:11, color:'var(--text-secondary)' }}>{label}</span>
-    </div>
-  )
-}
-
-function PopupRow({ label, value }) {
-  return (
-    <tr>
-      <td style={{ color:'var(--text-muted)',paddingRight:10,paddingBottom:3,
-                   whiteSpace:'nowrap',fontSize:12 }}>{label}</td>
-      <td style={{ color:'var(--text-secondary)',paddingBottom:3,fontSize:12 }}>{value}</td>
-    </tr>
-  )
-}
-
+// -- Satellite control (fixed position to escape Leaflet z-index) -----------
 function SatelliteControl({ satOn, setSatOn, satLayer, setSatLayer, satDate, setSatDate }) {
   const [open, setOpen] = useState(false)
   const btnRef          = useRef(null)
@@ -193,10 +143,9 @@ function SatelliteControl({ satOn, setSatOn, satLayer, setSatLayer, satDate, set
   useEffect(() => {
     if (!open) return
     function onDown(e) {
-      if (btnRef.current && !btnRef.current.contains(e.target)) {
-        const panel = document.getElementById('sat-panel')
-        if (panel && !panel.contains(e.target)) setOpen(false)
-      }
+      const panel = document.getElementById('sat-panel')
+      if (btnRef.current && !btnRef.current.contains(e.target) &&
+          panel && !panel.contains(e.target)) setOpen(false)
     }
     document.addEventListener('mousedown', onDown)
     return () => document.removeEventListener('mousedown', onDown)
@@ -205,8 +154,7 @@ function SatelliteControl({ satOn, setSatOn, satLayer, setSatLayer, satDate, set
   return (
     <>
       <button ref={btnRef} onClick={openPanel} style={{
-        fontSize:11, padding:'4px 10px', borderRadius:6,
-        border:'1px solid',
+        fontSize:11, padding:'4px 10px', borderRadius:6, border:'1px solid',
         borderColor: satOn ? '#378ADD' : 'var(--border-primary)',
         background:  satOn ? 'rgba(55,138,221,0.15)' : 'rgba(255,255,255,0.92)',
         color:       satOn ? '#185FA5' : 'var(--text-secondary)',
@@ -263,6 +211,30 @@ function SatelliteControl({ satOn, setSatOn, satLayer, setSatLayer, satDate, set
   )
 }
 
+function LegendRow({ color, label, dash }) {
+  return (
+    <div style={{ display:'flex', alignItems:'center', gap:6, marginTop:4 }}>
+      <svg width="16" height="12" viewBox="0 0 16 12">
+        <circle cx="8" cy="6" r="5" fill={color}
+          fillOpacity={dash ? 0.4 : 0.85} stroke={color}
+          strokeWidth={1.5} strokeDasharray={dash ? '3 2' : null} />
+      </svg>
+      <span style={{ fontSize:11, color:'var(--text-secondary)' }}>{label}</span>
+    </div>
+  )
+}
+
+function PopupRow({ label, value }) {
+  return (
+    <tr>
+      <td style={{ color:'var(--text-muted)',paddingRight:10,paddingBottom:3,
+                   whiteSpace:'nowrap',fontSize:12 }}>{label}</td>
+      <td style={{ color:'var(--text-secondary)',paddingBottom:3,fontSize:12 }}>{value}</td>
+    </tr>
+  )
+}
+
+// -- Main MapPanel ----------------------------------------------------------
 export default function MapPanel({ height }) {
   const {
     activeCategories, activeStatus, selectedEventId, selectEvent,
@@ -270,40 +242,19 @@ export default function MapPanel({ height }) {
   } = useAppStore()
   const { data: rawEvents = [], isLoading, isError, error } = useEvents()
 
-  const [geo,      setGeo]      = useState(null)
   const [satOn,    setSatOn]    = useState(false)
-  const [distOn,   setDistOn]   = useState(false)
   const [satLayer, setSatLayer] = useState(GIBS_LAYERS[0].id)
   const [satDate,  setSatDate]  = useState(todayStr)
+  const [distOn,   setDistOn]   = useState(false)
 
-  useEffect(() => {
-    Promise.allSettled(
-      ICPAC_ISO2.map((iso) =>
-        fetch(GEO_BASE + '/' + iso + '.geo.json', { signal: AbortSignal.timeout(7000) })
-          .then((r) => (r.ok ? r.json() : null))
-          .catch(() => null)
-      )
-    ).then((results) => {
-      const features = results.flatMap((r, i) => {
-        if (r.status !== 'fulfilled' || !r.value) return []
-        const d = r.value
-        const raw = d.type === 'FeatureCollection' ? d.features : [d]
-        return raw.map((f) => ({
-          ...f, properties: { ...(f.properties || {}), iso2: ICPAC_ISO2[i] },
-        }))
-      })
-      if (features.length) setGeo({ type: 'FeatureCollection', features })
-    })
-  }, [])
-
-  // Apply all filters including country + magnitude
+  // Apply filters
   const events = rawEvents.filter((ev) => {
     if (!activeCategories.includes(ev.category)) return false
     if (activeStatus === 'open'   && ev.status !== 'open')   return false
     if (activeStatus === 'closed' && ev.status !== 'closed') return false
     if (!ev.coords) return false
     if (selectedCountry && assignCountry(ev.coords) !== selectedCountry) return false
-    if (ev.magnitude && magFilters) {
+    if (magFilters && ev.magnitude) {
       const minMag = magFilters[ev.category] || 0
       if (minMag > 0 && ev.magnitude.value < minMag) return false
     }
@@ -313,35 +264,30 @@ export default function MapPanel({ height }) {
   const countryName = selectedCountry ? (COUNTRY_MAP[selectedCountry] || selectedCountry) : null
 
   return (
-    <div style={{ flex:1, position:'relative',
-                  background: lightMode ? '#e8f0e0' : '#0d1117',
-                  minHeight: height || 340, overflow:'hidden' }}>
-
+    <div style={{
+      flex:1, position:'relative',
+      background: lightMode ? '#e8f0e0' : '#0d1117',
+      minHeight: 0, overflow:'hidden',
+    }}>
+      {/* Loading */}
       {isLoading && (
         <div style={{ position:'absolute', inset:0, zIndex:1000,
-                      display:'flex', alignItems:'center', justifyContent:'center',
-                      background:'rgba(246,248,250,0.75)', fontSize:13,
-                      color:'var(--text-secondary)', pointerEvents:'none' }}>
-          <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:10 }}>
-            <div style={{ width:28, height:28, border:'3px solid #1D9E75',
-                          borderTopColor:'transparent', borderRadius:'50%',
-                          animation:'spin 0.9s linear infinite' }} />
-            <span>Loading events from NASA EONET...</span>
-          </div>
+                      display:'flex', flexDirection:'column',
+                      alignItems:'center', justifyContent:'center',
+                      background:'rgba(246,248,250,0.75)',
+                      fontSize:13, color:'var(--text-secondary)',
+                      pointerEvents:'none' }}>
+          <div style={{ width:28, height:28, border:'3px solid #1D9E75',
+                        borderTopColor:'transparent', borderRadius:'50%',
+                        animation:'spin 0.9s linear infinite', marginBottom:8 }} />
+          Loading events from NASA EONET...
         </div>
       )}
       {isError && <NetworkError error={error} />}
 
-      {/* Region badge -- top left */}
+      {/* Country filter badge -- top left */}
       <div style={{ position:'absolute', top:10, left:10, zIndex:1001,
                     display:'flex', alignItems:'center', gap:6, flexWrap:'wrap' }}>
-        <div style={{ background:'rgba(255,255,255,0.92)',
-                      border:'1px solid var(--border-primary)', borderRadius:6,
-                      padding:'4px 10px', fontSize:11, fontWeight:600,
-                      color:'#1D9E75', pointerEvents:'none',
-                      boxShadow:'0 1px 4px rgba(0,0,0,0.10)' }}>
-          Greater Horn of Africa
-        </div>
         {countryName && (
           <div style={{ background:'#E1F5EE', border:'1px solid #1D9E7555',
                         borderRadius:6, padding:'4px 10px', fontSize:11,
@@ -349,10 +295,9 @@ export default function MapPanel({ height }) {
                         alignItems:'center', gap:6,
                         boxShadow:'0 1px 4px rgba(0,0,0,0.10)' }}>
             {countryName}
-            <button onClick={() => setSelectedCountry(null)}
+            <button onClick={() => { setSelectedCountry(null); setDistOn(false) }}
               style={{ background:'none', border:'none', cursor:'pointer',
-                       color:'#085041', fontSize:14, lineHeight:1,
-                       padding:'0 0 0 2px' }}>
+                       color:'#085041', fontSize:14, lineHeight:1, padding:'0 0 0 2px' }}>
               x
             </button>
           </div>
@@ -362,25 +307,49 @@ export default function MapPanel({ height }) {
       {/* Top right controls */}
       <div style={{ position:'absolute', top:10, right:10, zIndex:1001,
                     display:'flex', gap:6, alignItems:'flex-start' }}>
-        <button
-          onClick={() => setDistOn((v) => !v)}
-          title={selectedCountry ? 'Toggle district boundaries' : 'Select a country first'}
-          style={{
-            fontSize:11, padding:'4px 10px', borderRadius:6,
-            border:'1px solid',
-            borderColor: distOn ? '#7F77DD' : 'var(--border-primary)',
-            background: distOn ? 'rgba(127,119,221,0.15)' : 'rgba(255,255,255,0.92)',
-            color: distOn ? '#534AB7' : 'var(--text-secondary)',
-            cursor: selectedCountry ? 'pointer' : 'not-allowed',
-            opacity: selectedCountry ? 1 : 0.5,
-            fontWeight: distOn ? 600 : 400,
-            boxShadow:'0 1px 4px rgba(0,0,0,0.12)',
+
+        {/* Districts button with tooltip */}
+        <div style={{ position:'relative' }} className="districts-btn-wrap">
+          <button
+            onClick={() => selectedCountry && setDistOn((v) => !v)}
+            style={{
+              fontSize:11, padding:'4px 10px', borderRadius:6, border:'1px solid',
+              borderColor: distOn ? '#7F77DD' : 'var(--border-primary)',
+              background: distOn
+                ? 'rgba(127,119,221,0.18)'
+                : selectedCountry ? 'rgba(255,255,255,0.92)' : 'rgba(240,240,240,0.85)',
+              color: distOn ? '#534AB7'
+                   : selectedCountry ? 'var(--text-secondary)' : 'var(--text-faint)',
+              cursor: selectedCountry ? 'pointer' : 'default',
+              fontWeight: distOn ? 600 : 400,
+              boxShadow:'0 1px 4px rgba(0,0,0,0.12)',
+              display:'flex', alignItems:'center', gap:5,
+            }}>
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"
+              strokeLinejoin="round" style={{ opacity: selectedCountry ? 1 : 0.4 }}>
+              <path d="M3 3h18v18H3z"/>
+              <path d="M3 9h18M3 15h18M9 3v18M15 3v18"/>
+            </svg>
+            {distOn && selectedCountry ? 'Districts ON' : 'Districts'}
+          </button>
+          <div className="districts-tooltip" style={{
+            position:'absolute', top:'calc(100% + 6px)', right:0,
+            background:'#1a1e23', color:'#e6edf3', fontSize:11, lineHeight:1.5,
+            padding:'7px 10px', borderRadius:6, whiteSpace:'nowrap', zIndex:99998,
+            boxShadow:'0 4px 12px rgba(0,0,0,0.25)', display:'none', pointerEvents:'none',
           }}>
-          Districts
-        </button>
+            {selectedCountry
+              ? (distOn ? 'Click to hide district boundaries'
+                        : 'Click to show districts for ' + (COUNTRY_MAP[selectedCountry] || ''))
+              : 'Click a country on the map first'}
+          </div>
+        </div>
+
         <SatelliteControl satOn={satOn} setSatOn={setSatOn}
           satLayer={satLayer} setSatLayer={setSatLayer}
           satDate={satDate} setSatDate={setSatDate} />
+
         <div style={{ background:'rgba(255,255,255,0.92)',
                       border:'1px solid var(--border-primary)', borderRadius:6,
                       padding:'4px 10px', fontSize:12, color:'var(--text-secondary)',
@@ -389,22 +358,26 @@ export default function MapPanel({ height }) {
         </div>
       </div>
 
-      {/* Legend -- bottom left */}
-      <div style={{ position:'absolute', bottom:30, left:10, zIndex:1001,
+      {/* Legend -- right side, below buttons */}
+      <div style={{ position:'absolute', top:160, right:10, left:'auto', zIndex:1001,
                     background:'rgba(255,255,255,0.92)',
                     border:'1px solid var(--border-primary)',
                     borderRadius:6, padding:'8px 10px', pointerEvents:'none',
                     boxShadow:'0 1px 4px rgba(0,0,0,0.10)' }}>
         <div style={{ fontSize:10, color:'var(--text-muted)', textTransform:'uppercase',
-                      letterSpacing:'0.06em', marginBottom:4, fontWeight:600 }}>
-          Legend
-        </div>
+                      letterSpacing:'0.06em', marginBottom:4, fontWeight:600 }}>Legend</div>
         <LegendRow color="#1D9E75" label="Open event"   dash={false} />
         <LegendRow color="#6e7681" label="Closed event" dash={true}  />
-        {selectedCountry && (
+        {!selectedCountry ? (
           <div style={{ marginTop:6, paddingTop:6,
                         borderTop:'1px solid var(--border-muted)',
-                        fontSize:11, color:'var(--text-muted)' }}>
+                        fontSize:10, color:'var(--text-muted)', lineHeight:1.5 }}>
+            Click a country to<br/>filter + enable Districts
+          </div>
+        ) : (
+          <div style={{ marginTop:6, paddingTop:6,
+                        borderTop:'1px solid var(--border-muted)',
+                        fontSize:10, color:'var(--text-muted)' }}>
             Click country to deselect
           </div>
         )}
@@ -418,12 +391,10 @@ export default function MapPanel({ height }) {
         {lightMode ? (
           <>
             <TileLayer url={TILE_LIGHT}     attribution={ATTR} />
-            <TileLayer url={TILE_LBL_LIGHT} />
           </>
         ) : (
           <>
             <TileLayer url={TILE_DARK}    attribution={ATTR} />
-            <TileLayer url={TILE_LBL_DARK} />
           </>
         )}
 
@@ -434,12 +405,19 @@ export default function MapPanel({ height }) {
         )}
 
         <OutsideMask />
-        <CountriesLayer geo={geo} lightMode={lightMode}
+
+        {/* Country boundaries from inline GeoJSON -- no network fetch */}
+        <CountriesLayer
+          lightMode={lightMode}
           selectedCountry={selectedCountry}
-          onCountryClick={setSelectedCountry} />
+          onCountryClick={setSelectedCountry}
+        />
+
+        {/* District boundaries -- loaded when country selected + distOn */}
         {distOn && selectedCountry && (
           <DistrictLayer iso2={selectedCountry} lightMode={lightMode} />
         )}
+
         <FitRegion />
         <FlyTo events={events} selectedId={selectedEventId} />
 
@@ -490,9 +468,8 @@ export default function MapPanel({ height }) {
                           <PopupRow label="Closed" value={ev.closed.slice(0,10)} />
                         )}
                         {ev.magnitude && (
-                          <PopupRow label={magLabel(ev.category)}
-                            value={formatMag(ev.magnitude.value, ev.magnitude.unit,
-                                             ev.category)} />
+                          <PopupRow label="Magnitude"
+                            value={ev.magnitude.value+' '+(ev.magnitude.unit||'')} />
                         )}
                         {cName && <PopupRow label="Country" value={cName} />}
                         <PopupRow label="Coords"

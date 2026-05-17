@@ -105,7 +105,7 @@ async function fetchEvents(opts) {
     return await fetchViaBackend(opts)
   } catch (backendErr) {
     // Backend offline is expected in local dev -- try direct
-    console.info('[NET-EA] Backend offline, trying EONET directly...')
+    console.info('[NHMT-EA] Backend offline, trying EONET directly...')
     return fetchDirect(opts)
   }
 }
